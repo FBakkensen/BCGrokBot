@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # al-runner: NuGet release has no BC 29 support yet -> build from source at this commit
+  ALRUNNER_REPO: StefanMaron/BusinessCentral.AL.Runner
+  ALRUNNER_SHA: 9c2e53a512e1096aa72ce0321f4d711f92f77f96
+  ALRUNNER_BC_VERSION: 29.0.54011.56009
+  AL_TOOL_VERSION: 18.0.43.1464
+  ALRUNNER_DLL: ${{ github.workspace }}/../alrunner-bc29/al-runner.dll
+  STRICT: "1"
+
+jobs:
+  build-test:
+    name: Build and unit test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Install AL tool
+        run: |
+          dotnet tool install -g Microsoft.Dynamics.BusinessCentral.Development.Tools --version "$AL_TOOL_VERSION"
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Cache symbols and analyzers
+        uses: actions/cache@v4
+        with:
+          path: |
+            app/.alpackages
+            test/.alpackages
+            .analyzers
+          key: al-deps-${{ hashFiles('get-symbols.sh', 'scripts/common.sh') }}
+
+      - name: Build (analyzers, warnings fail)
+        run: scripts/build.sh
+
+      - name: Cache al-runner build
+        id: alrunner-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../alrunner-bc29
+          key: alrunner-${{ env.ALRUNNER_SHA }}-${{ env.ALRUNNER_BC_VERSION }}
+
+      - name: Build al-runner from source
+        if: steps.alrunner-cache.outputs.cache-hit != 'true'
+        run: |
+          git init -q ../alrunner-src && cd ../alrunner-src
+          git fetch -q --depth 1 "https://github.com/$ALRUNNER_REPO" "$ALRUNNER_SHA"
+          git checkout -q FETCH_HEAD
+          dotnet build AlRunner/ -c Release -p:_BCVersion="$ALRUNNER_BC_VERSION" \
+            -p:AllowBcArtifactDownload=true -o "$(dirname "$ALRUNNER_DLL")"
+
+      - name: Cache al-runner BC artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/al-runner
+            ~/.cache/al-runner
+          key: alrunner-artifacts-${{ env.ALRUNNER_SHA }}-${{ env.ALRUNNER_BC_VERSION }}
+
+      - name: Unit tests (al-runner)
+        run: |
+          mkdir -p output
+          scripts/test-dev.sh --output-junit output/al-runner-junit.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            output/al-runner-junit.xml
+            app/output/*.app
+            test/output/*.app
+          if-no-files-found: warn

@@ -31,6 +31,8 @@ Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agen
 | Update the BCApps reference | `scripts/ref-sync.sh` |
 | Update BCQuality and our custom rules | `scripts/bcq-sync.sh` |
 
+CI (`.github/workflows/ci.yml`, check **Build and unit test**) runs `build.sh` (STRICT) and al-runner tests on every PR and push to main. Container integration tests (`test-integration.sh`, `verify.sh integration`) are **not** in CI: run them locally before merging behaviour changes.
+
 There is one shared BC container (web client `http://localhost:8080/`, `BCRUNNER` / `Admin123!`). Don't reset it while another agent is using it.
 
 ## Looking up Microsoft code (BCApps, `releases/29.x`, W1)

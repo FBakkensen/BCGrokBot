@@ -1,4 +1,4 @@
-# AGENTS.md: bc-app
+# AGENTS.md: BCGrokBot
 
 Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agents. You see only the files you open, so follow this file and the enforced checks; don't copy whatever happens to be nearby.
 
@@ -6,13 +6,13 @@ Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agen
 
 | Item | Main app `app/` | Test app `test/` |
 |---|---|---|
-| Name / publisher | My BC App / Flemming Bakkensen | My BC App Tests / Flemming Bakkensen |
+| Name / publisher | BCGrokBot / Flemming Bakkensen | BCGrokBot.Test / Flemming Bakkensen |
 | Object IDs | 50100–50149 | 50150–50199 |
-| Namespace | `FlemmingBakkensen.MyBCApp[.<Area>]` | `FlemmingBakkensen.MyBCApp.Test[.<Area>]` |
+| Namespace | `FlemmingBakkensen.BCGrokBot[.<Area>]` | `FlemmingBakkensen.BCGrokBot.Test[.<Area>]` |
 | Target | platform/application 29.0.0.0, runtime 18.0 | same, depends on main + Library Assert + Test Runner |
 
 - **File names:** `<ObjectName>.<ObjectType>.al` (e.g. `HelloWorld.Codeunit.al`), under `src/` (sub-folders per area).
-- **Permissions:** every object goes into the app's permission set (`My BC App`, 50100 / `My BC App Tests`, 50150).
+- **Permissions:** every object goes into the app's permission set (`BCGrokBot`, 50100 / `BCGrokBot.Test`, 50150).
 - **Docs and captions:** public objects/procedures get `///` XML doc comments. Captions that can be translated get `MaxLength` where a limit applies.
 - **Tests:** `Subtype = Test` codeunits with `// [SCENARIO]`, `// [GIVEN]`, `// [WHEN]`, `// [THEN]` comments. Use `Codeunit "Library Assert"` (namespace `System.TestLibraries.Utilities`). Test data is random and complete (BCQuality testing rules). For an `asserterror`, check the expected error text and code.
 - **Never edit:** `.alpackages/`, `output/`, `.analyzers/` (all generated), or anything under `/workspace/ref/` (read-only mirrors).
@@ -25,6 +25,7 @@ Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agen
 | Fast unit tests (no BC) | `scripts/test-dev.sh` |
 | Start / stop / wipe the BC container | `scripts/bc-up.sh` / `scripts/bc-down.sh` / `scripts/bc-reset.sh` |
 | Publish main app to the container | `scripts/publish.sh` |
+| Remove our apps from the container | `scripts/unpublish.sh ["Name" ...]` |
 | Run tests inside real BC | `scripts/test-integration.sh` |
 | Proof with evidence (`output/verify/<RUN_ID>/`) | `scripts/verify.sh doctor\|unit\|integration\|installed\|all` |
 | Update the BCApps reference | `scripts/ref-sync.sh` |
@@ -65,10 +66,10 @@ rg -l 'codeunit 1 ' "$R/System Application/App" ; rg -n 'LibrarySales\.' "$R/Lay
 | Rule | Enforced by |
 |---|---|
 | No compiler/analyzer warnings | `scripts/build.sh` (STRICT=1) |
-| Microsoft CodeCop rules (ruleset adapted from BCApps) | `rulesets/CodeCop.ruleset.json` via `bc-app.ruleset.json`, errors fail the build |
+| Microsoft CodeCop rules (ruleset adapted from BCApps) | `rulesets/CodeCop.ruleset.json` via `BCGrokBot.ruleset.json`, errors fail the build |
 | PTE rules incl. ID range, no reserved namespaces, no test assertions in app | `rulesets/PTECop.ruleset.json` (Microsoft ruleset with first-party exemptions re-enabled) |
 | Every object has a namespace | CodeCop AA0247 (error) |
-| Namespace is `FlemmingBakkensen.MyBCApp*` | BCQuality custom rule `quality/bcquality-custom/knowledge/style/use-the-bc-app-namespace.md` (review only; PTE0021 blocks Microsoft/System namespaces) |
+| Namespace is `FlemmingBakkensen.BCGrokBot*` | BCQuality custom rule `quality/bcquality-custom/knowledge/style/use-the-bcgrokbot-namespace.md` (review only; PTE0021 blocks Microsoft/System namespaces) |
 | Every object in a permission set | ALCops AC0010 |
 | Caption length limits | ALCops AC0009 |
 | Public API documented | ALCops DC0004/DC0007 (info, not yet enforced) |
@@ -84,6 +85,6 @@ When the operator corrects you: fix the mistake, add or adjust a row here, and e
 3. **Build:** `scripts/build.sh`, which must be clean.
 4. **Review:** `/bc-review` on the diff. Fix real findings and justify the dismissed ones.
 5. **Blast radius:** `/blast-radius` when touching posting, events, schema or permissions. Prove the key fact with al-runner or the container.
-6. **Verify:** `/verify-bc-app` (`scripts/verify.sh all`, plus web client screenshots via the browser agent). Add or update the feature file in `.cursor/skills/verify-bc-app/features/`.
+6. **Verify:** `/verify-bcgrokbot` (`scripts/verify.sh all`, plus web client screenshots via the browser agent). Add or update the feature file in `.cursor/skills/verify-bcgrokbot/features/`.
 7. **Adversarial review:** `/interrogate` on the branch.
 8. **Commit:** one logical change per commit. After repeated corrections, `/correct`.

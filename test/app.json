@@ -1,12 +1,12 @@
 {
   "id": "01695209-3ea9-4e54-a55a-95d40a05a3f4",
-  "name": "My BC App Tests",
+  "name": "BCGrokBot.Test",
   "publisher": "Flemming Bakkensen",
   "version": "1.0.0.0",
   "brief": "", "description": "",
   "privacyStatement": "", "EULA": "", "help": "", "url": "", "logo": "",
   "dependencies": [
-    { "id": "f6a7ebe7-1d1d-402b-a18e-0489a3af2fdc", "name": "My BC App", "publisher": "Flemming Bakkensen", "version": "1.0.0.0" },
+    { "id": "f6a7ebe7-1d1d-402b-a18e-0489a3af2fdc", "name": "BCGrokBot", "publisher": "Flemming Bakkensen", "version": "1.0.0.0" },
     { "id": "dd0be2ea-f733-4d65-bb34-a28f4624fb14", "name": "Library Assert", "publisher": "Microsoft", "version": "29.0.0.0" },
     { "id": "23de40a6-dfe8-4f80-80db-d70f83ce8caf", "name": "Test Runner", "publisher": "Microsoft", "version": "29.0.0.0" }
   ],

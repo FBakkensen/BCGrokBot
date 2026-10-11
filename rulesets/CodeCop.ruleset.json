@@ -937,7 +937,7 @@
     {
       "id": "AA0234",
       "action": "Error",
-      "justification": "bc-app: greenfield app, tooltips on table fields required (MS disables only for legacy volume)."
+      "justification": "BCGrokBot: greenfield app, tooltips on table fields required (MS disables only for legacy volume)."
     },
     {
       "id": "AA0235",

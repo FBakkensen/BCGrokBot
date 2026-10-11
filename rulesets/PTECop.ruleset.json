@@ -4,12 +4,12 @@
     {
       "id": "PTE0001",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Object ID must be in free range.)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Object ID must be in free range.)"
     },
     {
       "id": "PTE0002",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (PTE ID ranges do not apply to 1st party apps)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (PTE ID ranges do not apply to 1st party apps)"
     },
     {
       "id": "PTE0003",
@@ -22,12 +22,12 @@
     {
       "id": "PTE0005",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (The compilation target of an application must be a value that is allowed in a multi-tenant SaaS environment)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (The compilation target of an application must be a value that is allowed in a multi-tenant SaaS environment)"
     },
     {
       "id": "PTE0006",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Encryption key functions must not be invoked.)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Encryption key functions must not be invoked.)"
     },
     {
       "id": "PTE0007",
@@ -44,7 +44,7 @@
     {
       "id": "PTE0010",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Microsoft apps are not stored in EMRS, which imposes the 50 characters limit.)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Microsoft apps are not stored in EMRS, which imposes the 50 characters limit.)"
     },
     {
       "id": "PTE0011",
@@ -53,12 +53,12 @@
     {
       "id": "PTE0012",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Test assertion functions are not allowed in a non-test context.)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Test assertion functions are not allowed in a non-test context.)"
     },
     {
       "id": "PTE0013",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Entitlements cannot be defined in an extension.)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Entitlements cannot be defined in an extension.)"
     },
     {
       "id": "PTE0014",
@@ -91,7 +91,7 @@
     {
       "id": "PTE0021",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Defining reserved Microsoft and System namespaces is not allowed)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (Defining reserved Microsoft and System namespaces is not allowed)"
     },
     {
       "id": "PTE0022",
@@ -104,7 +104,7 @@
     {
       "id": "PTE0024",
       "action": "Error",
-      "justification": "bc-app: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (We allow moved symbols for Microsoft apps because we run PTECop on the entire codebase which includes global apps.)"
+      "justification": "BCGrokBot: re-enabled; Microsoft disabled it only because it does not apply to 1st-party apps (We allow moved symbols for Microsoft apps because we run PTECop on the entire codebase which includes global apps.)"
     },
     {
       "id": "PTE0025",

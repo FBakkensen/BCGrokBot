@@ -1,5 +1,5 @@
 {
-  "name": "bc-app ruleset",
+  "name": "BCGrokBot ruleset",
   "description": "Entry ruleset. Microsoft CodeCop/PTECop rulesets copied from microsoft/BCApps releases/29.x (src/rulesets) and adapted for a per-tenant extension. Add project overrides in 'rules' with a justification.",
   "generalAction": null,
   "includedRuleSets": [

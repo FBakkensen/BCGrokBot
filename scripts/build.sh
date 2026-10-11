@@ -24,6 +24,8 @@ compile() { # project out
   [ -f "$2" ] || die "no output produced: $2"; ok "$2"
 }
 mkdir -p app/output test/output
+# .g.xlf is regenerated on every compile; a stale one (e.g. after an app rename) is read as a translation
+rm -f app/Translations/*.g.xlf test/Translations/*.g.xlf
 compile app app/output/app.app
 cp -f app/output/app.app "test/.alpackages/$MAIN_APP_FILE"
 compile test test/output/test.app

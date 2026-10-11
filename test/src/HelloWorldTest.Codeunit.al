@@ -1,6 +1,6 @@
-namespace FlemmingBakkensen.MyBCApp.Test;
+namespace FlemmingBakkensen.BCGrokBot.Test;
 
-using FlemmingBakkensen.MyBCApp;
+using FlemmingBakkensen.BCGrokBot;
 using System.TestLibraries.Utilities;
 
 codeunit 50150 "Hello World Test"

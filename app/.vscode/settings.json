@@ -12,6 +12,6 @@
     "${analyzerFolder}ALCops.PlatformCop.dll",
     "${analyzerFolder}ALCops.TestAutomationCop.dll"
   ],
-  "al.ruleSetPath": "../bc-app.ruleset.json",
+  "al.ruleSetPath": "../BCGrokBot.ruleset.json",
   "al.packageCachePath": ["./.alpackages"]
 }

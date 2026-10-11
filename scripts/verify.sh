@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Non-browser verification harness for bc-app. Evidence -> output/verify/<run-id>/
+# Non-browser verification harness for BCGrokBot. Evidence -> output/verify/<run-id>/
 # Usage: scripts/verify.sh doctor|unit|integration|installed|all
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
@@ -43,9 +43,9 @@ installed() {
   local cid; cid=$(company_id)
   curl -sf -u "$BC_AUTH" "$API/microsoft/automation/v2.0/companies($cid)/extensions?\$filter=publisher%20eq%20'Flemming%20Bakkensen'" \
     | python3 -c 'import sys,json;v=json.load(sys.stdin)["value"];json.dump(v,open(sys.argv[1],"w"),indent=1);[print("  %s %s.%s installed=%s" % (e["displayName"], e["versionMajor"], e["versionMinor"], e["isInstalled"])) for e in v]' "$EVID/extensions.json"
-  python3 -c 'import json,sys;v=json.load(open(sys.argv[1]));sys.exit(0 if any(e["displayName"]=="My BC App" and e["isInstalled"] for e in v) else 1)' "$EVID/extensions.json" \
-    || die "My BC App is not installed - run scripts/publish.sh"
-  ok "My BC App installed"
+  python3 -c 'import json,sys;v=json.load(open(sys.argv[1]));sys.exit(0 if any(e["displayName"]=="BCGrokBot" and e["isInstalled"] for e in v) else 1)' "$EVID/extensions.json" \
+    || die "BCGrokBot is not installed - run scripts/publish.sh"
+  ok "BCGrokBot installed"
 }
 case "${1:-all}" in
   doctor) doctor ;; unit) unit ;; integration) doctor; integration ;; installed) installed ;;

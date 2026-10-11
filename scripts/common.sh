@@ -1,4 +1,4 @@
-# Shared settings for bc-app scripts. Source, don't execute.
+# Shared settings for BCGrokBot scripts. Source, don't execute.
 set -euo pipefail
 export DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.dotnet}"
 export PATH="$DOTNET_ROOT:$HOME/.dotnet/tools:$PATH"
@@ -10,7 +10,7 @@ export BC_WEBCLIENT="${BC_WEBCLIENT:-1}"
 BC_AUTH="${BC_AUTH:-BCRUNNER:Admin123!}"
 DEV_URL="${DEV_URL:-http://localhost:7049/BC/dev}"
 WEB_URL="${WEB_URL:-http://localhost:8080/}"
-MAIN_APP_FILE="Flemming Bakkensen_My BC App_1.0.0.0.app"
+MAIN_APP_FILE="Flemming Bakkensen_BCGrokBot_1.0.0.0.app"
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m OK\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31mERR\033[0m %s\n' "$*" >&2; exit 1; }
@@ -19,7 +19,7 @@ SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO="sudo"
 dc() { (cd "$BC_LINUX_DIR" && $SUDO -E docker compose "$@"); }
 ALCOPS_VERSION="${ALCOPS_VERSION:-1.3.1}"
 ANALYZER_DIR="$REPO_ROOT/.analyzers"
-RULESET="$REPO_ROOT/bc-app.ruleset.json"
+RULESET="$REPO_ROOT/BCGrokBot.ruleset.json"
 # Directory of the AL tool actually executing (net8.0 host), for Microsoft cops
 al_tool_dir() {
   local d; d=$(ls -d "$HOME"/.dotnet/tools/.store/microsoft.dynamics.businesscentral.development.tools/*/microsoft.dynamics.businesscentral.development.tools/*/tools/net8.0/any 2>/dev/null | sort -V | tail -1)

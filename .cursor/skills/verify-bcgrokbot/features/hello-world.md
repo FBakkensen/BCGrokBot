@@ -17,7 +17,7 @@ Codeunit 50100 "Hello World" returns `Hello, World!` from `GetGreeting()`. It ha
 Preconditions:
 
 - Baseline preconditions from the README.
-- `scripts/verify.sh integration` has run at least once since the last DB reset. That publishes "My BC App Tests".
+- `scripts/verify.sh integration` has run at least once since the last DB reset. That publishes "BCGrokBot.Test".
 
 - **Unit.** Run `RUN_ID=<id> scripts/verify.sh unit`. `unit.txt` shows `Tests: 1 passed 1 failed 0` and `Result: PASSED`.
 - **Container.** Run `RUN_ID=<id> scripts/verify.sh integration`. `integration.txt` ends with `1 total, 1 passed, 0 failed`, and `junit.xml` contains `GreetingIsHelloWorld`.

@@ -1,4 +1,4 @@
-namespace FlemmingBakkensen.MyBCApp;
+namespace FlemmingBakkensen.BCGrokBot;
 
 /// <summary>
 /// Sample codeunit that returns a greeting. Used to verify the build and test toolchain.

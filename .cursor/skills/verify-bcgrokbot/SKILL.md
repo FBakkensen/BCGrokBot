@@ -1,17 +1,17 @@
 ---
-name: verify-bc-app
-description: "Verify bc-app (Business Central 29 per-tenant extension) end to end on this Linux box: al-runner unit tests, the BC Linux container (dev endpoint, test runner, APIs) and the BC web client at http://localhost:8080. Use when you need proof that a change works in a real BC: after publishing, before committing a feature, or when asked to verify/screenshot bc-app."
+name: verify-bcgrokbot
+description: "Verify BCGrokBot (Business Central 29 per-tenant extension) end to end on this Linux box: al-runner unit tests, the BC Linux container (dev endpoint, test runner, APIs) and the BC web client at http://localhost:8080. Use when you need proof that a change works in a real BC: after publishing, before committing a feature, or when asked to verify/screenshot BCGrokBot."
 ---
 
-# verify-bc-app
+# verify-bcgrokbot
 
-bc-app is an AL extension. Users reach it through the **BC web client**. Agents reach it through the **dev endpoint, APIs and test runner** of a local BC 29 container. Feature map: [`features/README.md`](features/README.md).
+BCGrokBot is an AL extension. Users reach it through the **BC web client**. Agents reach it through the **dev endpoint, APIs and test runner** of a local BC 29 container. Feature map: [`features/README.md`](features/README.md).
 
 ## Launch
 
 ```bash
 scripts/bc-up.sh       # starts dockerd if needed, then the container (BC 29.0.54011.56009, web client on)
-scripts/publish.sh     # build + publish "My BC App" (forcesync)
+scripts/publish.sh     # build + publish "BCGrokBot" (forcesync)
 ```
 
 - **Ready when** `bc-up.sh` prints `OK web client: http://localhost:8080/`. That takes about 1 min warm and about 2.5 min after a reset.
@@ -40,7 +40,7 @@ Run it before the first drive, after anything surprising, and after every failed
 |---|---|---|
 | Unit tests (no container) | `scripts/verify.sh unit` | `unit.txt` has `Result: PASSED` |
 | Integration tests in BC | `scripts/verify.sh integration` | `integration.txt` + `junit.xml`, `N total, N passed, 0 failed` |
-| App installed in tenant | `scripts/verify.sh installed` | `extensions.json` has `My BC App` with `isInstalled: true` |
+| App installed in tenant | `scripts/verify.sh installed` | `extensions.json` has `BCGrokBot` with `isInstalled: true` |
 | Everything | `scripts/verify.sh all` | all of the above |
 
 ### Web client (driven by the browser agent, not the shell)

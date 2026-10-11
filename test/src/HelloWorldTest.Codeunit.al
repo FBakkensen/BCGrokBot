@@ -5,6 +5,7 @@ using System.TestLibraries.Utilities;
 
 codeunit 50150 "Hello World Test"
 {
+    Access = Internal;
     Subtype = Test;
 
     var

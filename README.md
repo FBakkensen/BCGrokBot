@@ -35,7 +35,7 @@ Web client: http://localhost:8080/ (BCRUNNER / Admin123!). Dev endpoint: http://
 ## Code analysis
 - Microsoft: CodeCop, UICop, PerTenantExtensionCop. AppSourceCop is off because this is a PTE, not an AppSource app.
 - Community: [ALCops](https://www.nuget.org/packages/ALCops.Analyzers) 1.3.1 (ApplicationCop, DocumentationCop, FormattingCop, LinterCop, PlatformCop, TestAutomationCop). `build.sh` downloads the net8.0 DLLs into `.analyzers/`, which is gitignored.
-- Rule severities go in `BCGrokBot.ruleset.json`, which includes `rulesets/CodeCop.ruleset.json` and `rulesets/PTECop.ruleset.json` (copied from microsoft/BCApps `releases/29.x`, with first-party exemptions re-enabled for a PTE). VS Code uses the same analyzers through `app|test/.vscode/settings.json`. In VS Code, `${analyzerFolder}` must contain the ALCops DLLs; alternatively, install the ALCops VS Code extension.
+- Rule severities go in `BCGrokBot.ruleset.json`, which includes `rulesets/CodeCop.ruleset.json` and `rulesets/PTECop.ruleset.json` and `rulesets/ALCops.ruleset.json` (CodeCop/PTECop copied from microsoft/BCApps `releases/29.x`, with first-party exemptions re-enabled for a PTE). VS Code uses the same analyzers through `app|test/.vscode/settings.json`. In VS Code, `${analyzerFolder}` must contain the ALCops DLLs; alternatively, install the ALCops VS Code extension.
 
 ## Agents, references and verification
 - `AGENTS.md`: conventions, script guide, BCApps lookup recipe, the rule-to-enforcement table, the per-feature workflow.

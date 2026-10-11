@@ -74,7 +74,9 @@ rg -l 'codeunit 1 ' "$R/System Application/App" ; rg -n 'LibrarySales\.' "$R/Lay
 | Namespace is `FlemmingBakkensen.BCGrokBot*` | BCQuality custom rule `quality/bcquality-custom/knowledge/style/use-the-bcgrokbot-namespace.md` (review only; PTE0021 blocks Microsoft/System namespaces) |
 | Every object in a permission set | ALCops AC0010 |
 | Caption length limits | ALCops AC0009 |
-| Public API documented | ALCops DC0004/DC0007 (info, not yet enforced) |
+| Public API documented | ALCops DC0004/DC0007/DC0009 (Warning → fails STRICT build) |
+| Every object sets `Access` explicitly (default to Internal) | ALCops PC0006 (opt-in, Warning) |
+| ALCops severities for a PTE (126 rules, each justified) | `rulesets/ALCops.ruleset.json` via `BCGrokBot.ruleset.json` |
 | Behaviour proven by tests | `scripts/test-dev.sh` + `scripts/verify.sh integration` |
 | AL review against Microsoft guidance | `/bc-review` (BCQuality; advisory, not a gate) |
 

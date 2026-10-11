@@ -1,0 +1,636 @@
+{
+  "name": "ALCops 1.3.1 (BCGrokBot, PTE)",
+  "description": "All rules of ALCops.Analyzers 1.3.1 (ApplicationCop, DocumentationCop, FormattingCop, LinterCop, PlatformCop, TestAutomationCop) with deliberate severities for a per-tenant extension. Enumerated from github.com/ALCops/Analyzers @ bc6ae5ab (the NuGet 1.3.1 source commit). build.sh is STRICT: Warning fails the build like Error; Info is advisory.",
+  "rules": [
+    {
+      "id": "AC0000",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Analyzer threw an unhandled exception - Analyzer crashed: surface it so a broken analyzer on Linux never silently stops checking."
+    },
+    {
+      "id": "AC0001",
+      "action": "Warning",
+      "justification": "[ApplicationCop] DrillDownPageId and LookupPageId property must be defined for tables used in list pages - Lookup/DrillDown pages on list tables."
+    },
+    {
+      "id": "AC0002",
+      "action": "Error",
+      "justification": "[ApplicationCop] Single-field primary key requires the NotBlank property - Single-field PK without NotBlank allows blank keys."
+    },
+    {
+      "id": "AC0003",
+      "action": "Error",
+      "justification": "[ApplicationCop] Set NotBlank property to false when 'No. Series' TableRelation exists - NotBlank conflicts with No. Series."
+    },
+    {
+      "id": "AC0004",
+      "action": "Info",
+      "justification": "[ApplicationCop] Confirm() must be implemented through the \"Confirm Management\" codeunit - ALCops default."
+    },
+    {
+      "id": "AC0005",
+      "action": "Info",
+      "justification": "[ApplicationCop] GlobalLanguage() must be implemented through the \"Translation Helper\" codeunit - ALCops default."
+    },
+    {
+      "id": "AC0006",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Use the \"Page Management\" codeunit instead invoking Page.Run directly - ALCops default."
+    },
+    {
+      "id": "AC0007",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Install and Upgrade codeunits should have Access set to Internal - ALCops default."
+    },
+    {
+      "id": "AC0008",
+      "action": "None",
+      "justification": "[ApplicationCop] DataPerCompany must be explicitly set on table objects - DataPerCompany default (true) is right for a PTE; explicit setting is noise."
+    },
+    {
+      "id": "AC0009",
+      "action": "Warning",
+      "justification": "[ApplicationCop] The Caption of permissionset objects should not exceed the maximum length - ALCops default."
+    },
+    {
+      "id": "AC0010",
+      "action": "Error",
+      "justification": "[ApplicationCop] All application objects must be covered by a PermissionSet - Every object must be in our permission set or users get permission errors."
+    },
+    {
+      "id": "AC0011",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Captions must be defined on user-facing objects and controls - User-facing captions required."
+    },
+    {
+      "id": "AC0012",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Integration events must not be declared in codeunits with Access set to Internal - ALCops default."
+    },
+    {
+      "id": "AC0013",
+      "action": "Warning",
+      "justification": "[ApplicationCop] DropDown and Brick fieldgroups must be defined - Opt-in: DropDown/Brick fieldgroups make lookups usable."
+    },
+    {
+      "id": "AC0014",
+      "action": "Info",
+      "justification": "[ApplicationCop] ToolTip must end with a punctuation - ALCops default."
+    },
+    {
+      "id": "AC0015",
+      "action": "Info",
+      "justification": "[ApplicationCop] ToolTip should start with 'Specifies' - ALCops default."
+    },
+    {
+      "id": "AC0016",
+      "action": "Info",
+      "justification": "[ApplicationCop] Do not use line breaks in ToolTip - ALCops default."
+    },
+    {
+      "id": "AC0017",
+      "action": "Info",
+      "justification": "[ApplicationCop] ToolTip should not exceed 200 characters - ALCops default."
+    },
+    {
+      "id": "AC0018",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Empty captions should be locked - ALCops default."
+    },
+    {
+      "id": "AC0019",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Reserve Enum value zero (0) for empty value - Enum value 0 reserved for empty."
+    },
+    {
+      "id": "AC0020",
+      "action": "Error",
+      "justification": "[ApplicationCop] Labels suffixed with Tok must be locked. - Tok labels must be Locked or they get translated."
+    },
+    {
+      "id": "AC0021",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Locked Label must have a suffix Tok. - Opt-in: Locked labels use Tok suffix (pairs with AC0020)."
+    },
+    {
+      "id": "AC0022",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Empty Enum value should not have a Caption property specified. - ALCops default."
+    },
+    {
+      "id": "AC0023",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Enum value must have non-empty Caption to be selectable in the client. - ALCops default."
+    },
+    {
+      "id": "AC0024",
+      "action": "Error",
+      "justification": "[ApplicationCop] Event publisher methods should not be public. - Public event publishers become a contract we never intend to keep in a PTE."
+    },
+    {
+      "id": "AC0025",
+      "action": "Info",
+      "justification": "[ApplicationCop] Use the (CR)LFSeparator from the \"Type Helper\" codeunit. - ALCops default."
+    },
+    {
+      "id": "AC0026",
+      "action": "Info",
+      "justification": "[ApplicationCop] Explicitly set AllowInCustomizations for excluded fields - ALCops default."
+    },
+    {
+      "id": "AC0027",
+      "action": "Info",
+      "justification": "[ApplicationCop] Use the 'Tok' suffix for token labels. - ALCops default."
+    },
+    {
+      "id": "AC0028",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Table field must define a ToolTip. - Table field ToolTips (pairs with CodeCop AA0234)."
+    },
+    {
+      "id": "AC0029",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Duplicate ToolTip between page and table field. - No duplicated ToolTips between page and table."
+    },
+    {
+      "id": "AC0030",
+      "action": "Info",
+      "justification": "[ApplicationCop] Use return value for better error handling - ALCops default."
+    },
+    {
+      "id": "AC0031",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Table data access requires explicit object permissions - Explicit table data permissions on objects accessing data."
+    },
+    {
+      "id": "AC0032",
+      "action": "Warning",
+      "justification": "[ApplicationCop] Unused permission declared - Unused permissions widen access."
+    },
+    {
+      "id": "DC0000",
+      "action": "Warning",
+      "justification": "[DocumentationCop] Analyzer threw an unhandled exception - Analyzer crashed: surface it so a broken analyzer on Linux never silently stops checking."
+    },
+    {
+      "id": "DC0001",
+      "action": "Warning",
+      "justification": "[DocumentationCop] Commit() needs a comment to justify its existence - Commit() must be justified."
+    },
+    {
+      "id": "DC0002",
+      "action": "Warning",
+      "justification": "[DocumentationCop] Writing to FlowFields is not common and requires an explanatory comment - Writing FlowFields must be justified."
+    },
+    {
+      "id": "DC0003",
+      "action": "Info",
+      "justification": "[DocumentationCop] Empty statements should be removed or documented - ALCops default."
+    },
+    {
+      "id": "DC0004",
+      "action": "Warning",
+      "justification": "[DocumentationCop] Public procedures must include XML documentation comments - Public procedures are documented."
+    },
+    {
+      "id": "DC0005",
+      "action": "Warning",
+      "justification": "[DocumentationCop] XML documentation must match the procedure signature - Docs must match signatures."
+    },
+    {
+      "id": "DC0006",
+      "action": "None",
+      "justification": "[DocumentationCop] Internal procedures must include XML documentation comments - Internal procedure docs: noise for a small PTE."
+    },
+    {
+      "id": "DC0007",
+      "action": "Warning",
+      "justification": "[DocumentationCop] Public objects must include XML documentation comments - Public objects are documented."
+    },
+    {
+      "id": "DC0008",
+      "action": "None",
+      "justification": "[DocumentationCop] Internal objects must include XML documentation comments - Internal object docs: noise."
+    },
+    {
+      "id": "DC0009",
+      "action": "Warning",
+      "justification": "[DocumentationCop] An integration or business event must include XML documentation comments - Events are documented."
+    },
+    {
+      "id": "DC0010",
+      "action": "None",
+      "justification": "[DocumentationCop] Internal event must include XML documentation comments - Internal event docs: noise."
+    },
+    {
+      "id": "FC0000",
+      "action": "Warning",
+      "justification": "[FormattingCop] Analyzer threw an unhandled exception - Analyzer crashed: surface it so a broken analyzer on Linux never silently stops checking."
+    },
+    {
+      "id": "FC0001",
+      "action": "Error",
+      "justification": "[FormattingCop] Procedure or Trigger declaration should not end with semicolon - Formatting: trivial to fix, keeps diffs clean."
+    },
+    {
+      "id": "FC0002",
+      "action": "Warning",
+      "justification": "[FormattingCop] Casing of symbols and keywords must align with the language definition - Keyword/symbol casing."
+    },
+    {
+      "id": "FC0003",
+      "action": "Error",
+      "justification": "[FormattingCop] Function calls should have parenthesis even if they do not have any parameters - Formatting: trivial to fix."
+    },
+    {
+      "id": "FC0004",
+      "action": "Info",
+      "justification": "[FormattingCop] Permission declarations should be sorted by object type and name - ALCops default."
+    },
+    {
+      "id": "FC0005",
+      "action": "Error",
+      "justification": "[FormattingCop] Call methods with parenthesis instead of using assignment syntax - Formatting: trivial to fix."
+    },
+    {
+      "id": "FC0006",
+      "action": "Info",
+      "justification": "[FormattingCop] Permission values should be lowercase - ALCops default."
+    },
+    {
+      "id": "FC0007",
+      "action": "None",
+      "justification": "[FormattingCop] Statement blocks should be separated by a blank line - Blank-line style is subjective; not enforced."
+    },
+    {
+      "id": "LC0000",
+      "action": "Warning",
+      "justification": "[LinterCop] Analyzer threw an unhandled exception - Analyzer crashed: surface it so a broken analyzer on Linux never silently stops checking."
+    },
+    {
+      "id": "LC0003",
+      "action": "Error",
+      "justification": "[LinterCop] Do not use Object IDs as object references - Object IDs instead of names break on renumbering."
+    },
+    {
+      "id": "LC0007",
+      "action": "None",
+      "justification": "[LinterCop] Maintainability index metric - Metric only (no finding)."
+    },
+    {
+      "id": "LC0008",
+      "action": "Warning",
+      "justification": "[LinterCop] Maintainability index below configured threshold - ALCops default."
+    },
+    {
+      "id": "LC0009",
+      "action": "None",
+      "justification": "[LinterCop] Cyclomatic complexity metric - Metric only (no finding)."
+    },
+    {
+      "id": "LC0010",
+      "action": "Warning",
+      "justification": "[LinterCop] Cyclomatic complexity exceeds configured threshold - ALCops default."
+    },
+    {
+      "id": "LC0019",
+      "action": "Warning",
+      "justification": "[LinterCop] Redundant DataClassification on field - ALCops default."
+    },
+    {
+      "id": "LC0020",
+      "action": "Warning",
+      "justification": "[LinterCop] Redundant ApplicationArea on page - ALCops default."
+    },
+    {
+      "id": "LC0028",
+      "action": "Warning",
+      "justification": "[LinterCop] Use identifier syntax in event subscriber arguments - ALCops default."
+    },
+    {
+      "id": "LC0031",
+      "action": "Info",
+      "justification": "[LinterCop] Use ReadIsolation instead of LockTable - ALCops default."
+    },
+    {
+      "id": "LC0033",
+      "action": "Info",
+      "justification": "[LinterCop] App manifest runtime is behind target version - We pin runtime 18.0 to BC 29 on purpose; advisory only."
+    },
+    {
+      "id": "LC0040",
+      "action": "Error",
+      "justification": "[LinterCop] Explicitly set the RunTrigger parameter on build-in methods - Implicit RunTrigger hides whether table triggers run."
+    },
+    {
+      "id": "LC0043",
+      "action": "Error",
+      "justification": "[LinterCop] Use SecretText type to protect credentials and sensitive textual values from being revealed - Credentials must use SecretText."
+    },
+    {
+      "id": "LC0048",
+      "action": "Error",
+      "justification": "[LinterCop] Use Error with ErrorInfo or Label instead of Text - Error() with Text constants loses translation/telemetry; use Label/ErrorInfo."
+    },
+    {
+      "id": "LC0052",
+      "action": "Warning",
+      "justification": "[LinterCop] The internal method is declared but never used. - ALCops default."
+    },
+    {
+      "id": "LC0053",
+      "action": "Info",
+      "justification": "[LinterCop] The internal method is only used in the object in which it is declared. - Internal-but-local procedures are often fine during development."
+    },
+    {
+      "id": "LC0054",
+      "action": "Warning",
+      "justification": "[LinterCop] Use the standard 'I' prefix for interface object names. - Opt-in: I-prefix for interfaces, matches BCApps."
+    },
+    {
+      "id": "LC0063",
+      "action": "Info",
+      "justification": "[LinterCop] Give field more describing name. - ALCops default."
+    },
+    {
+      "id": "LC0081",
+      "action": "Error",
+      "justification": "[LinterCop] Use Rec.IsEmpty() for checking record existence - Count() for existence checks is a needless full count."
+    },
+    {
+      "id": "LC0082",
+      "action": "Info",
+      "justification": "[LinterCop] Consider using a Query object or Rec.Find('-') with Rec.Next() for checking exactly one record - ALCops default."
+    },
+    {
+      "id": "LC0083",
+      "action": "Warning",
+      "justification": "[LinterCop] Use new Date/Time/DateTime methods for extracting parts - ALCops default."
+    },
+    {
+      "id": "LC0086",
+      "action": "Warning",
+      "justification": "[LinterCop] Use the new PageStyle datatype instead string literals - ALCops default."
+    },
+    {
+      "id": "LC0088",
+      "action": "Warning",
+      "justification": "[LinterCop] Prefer Enum over Option type - Prefer Enum over Option for new code."
+    },
+    {
+      "id": "LC0089",
+      "action": "None",
+      "justification": "[LinterCop] Cognitive complexity metric - Metric only (no finding)."
+    },
+    {
+      "id": "LC0089i",
+      "action": "None",
+      "justification": "[LinterCop] Cognitive Complexity increment - Metric increment detail only."
+    },
+    {
+      "id": "LC0090",
+      "action": "Warning",
+      "justification": "[LinterCop] Cognitive Complexity exceeds threshold. - ALCops default."
+    },
+    {
+      "id": "LC0091",
+      "action": "None",
+      "justification": "[LinterCop] Translatable text should be translated - PTE ships en-US only, no translation files (TranslationFile feature just generates the .g.xlf)."
+    },
+    {
+      "id": "LC0092",
+      "action": "Info",
+      "justification": "[LinterCop] Name does not match naming convention - Naming pattern is unconfigured; advisory until configured."
+    },
+    {
+      "id": "LC0094",
+      "action": "Warning",
+      "justification": "[LinterCop] Redundant AllowInCustomizations on field - ALCops default."
+    },
+    {
+      "id": "LC0095",
+      "action": "Warning",
+      "justification": "[LinterCop] Parameter is not referenced - ALCops default."
+    },
+    {
+      "id": "LC0096",
+      "action": "Warning",
+      "justification": "[LinterCop] Unnecessary record parameter in method call - ALCops default."
+    },
+    {
+      "id": "LC0097",
+      "action": "None",
+      "justification": "[LinterCop] Avoid mixing exit() and named return variable assignments - ALCops default (disabled by default)."
+    },
+    {
+      "id": "LC0098",
+      "action": "Info",
+      "justification": "[LinterCop] Event subscriber procedure name does not match the configured template - ALCops default."
+    },
+    {
+      "id": "LC0099",
+      "action": "Info",
+      "justification": "[LinterCop] Event subscriber parameter is not referenced - ALCops default."
+    },
+    {
+      "id": "PC0000",
+      "action": "Warning",
+      "justification": "[PlatformCop] Analyzer threw an unhandled exception - Analyzer crashed: surface it so a broken analyzer on Linux never silently stops checking."
+    },
+    {
+      "id": "PC0001",
+      "action": "Error",
+      "justification": "[PlatformCop] FlowFields should not be editable - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0002",
+      "action": "Error",
+      "justification": "[PlatformCop] AutoIncrement fields are not supported in temporary tables - ALCops default."
+    },
+    {
+      "id": "PC0003",
+      "action": "Error",
+      "justification": "[PlatformCop] Filter operators should not be used in SetRange - ALCops default."
+    },
+    {
+      "id": "PC0004",
+      "action": "Error",
+      "justification": "[PlatformCop] Zero index access on 1-based List objects - ALCops default."
+    },
+    {
+      "id": "PC0005",
+      "action": "Info",
+      "justification": "[PlatformCop] Explicitly set Extensible property on public objects - Extensible is mostly an AppSource contract concern; advisory in a PTE."
+    },
+    {
+      "id": "PC0006",
+      "action": "Warning",
+      "justification": "[PlatformCop] Every object needs to specify a value for the Access property - Opt-in: forces a deliberate Access choice; default to Internal in a PTE."
+    },
+    {
+      "id": "PC0007",
+      "action": "Error",
+      "justification": "[PlatformCop] Avoids a runtime error from using AutoCalcFields on a field that is not a FlowField or a field of type Blob. - ALCops default."
+    },
+    {
+      "id": "PC0008",
+      "action": "Error",
+      "justification": "[PlatformCop] Avoid unsupported operators with placeholders in SetFilter expressions - ALCops default."
+    },
+    {
+      "id": "PC0010",
+      "action": "Error",
+      "justification": "[PlatformCop] Event subscriber var keyword mismatch. - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0011",
+      "action": "Error",
+      "justification": "[PlatformCop] Handled parameters in event signatures should be passed by var - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0012",
+      "action": "Error",
+      "justification": "[PlatformCop] Set values for FlowFilter fields using filtering methods - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0013",
+      "action": "Error",
+      "justification": "[PlatformCop] Incorrect number or type of arguments in .Get() method on Record object - ALCops default."
+    },
+    {
+      "id": "PC0014",
+      "action": "Warning",
+      "justification": "[PlatformCop] Use two single quotes instead of double quotes in JPath expressions - ALCops default."
+    },
+    {
+      "id": "PC0015",
+      "action": "Error",
+      "justification": "[PlatformCop] Use IsNullGuid() to check for empty GUID values. - ALCops default."
+    },
+    {
+      "id": "PC0016",
+      "action": "Error",
+      "justification": "[PlatformCop] Clear/ClearAll does not reset SingleInstance codeunit state - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0017",
+      "action": "Error",
+      "justification": "[PlatformCop] Page record argument does not match source table - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0018",
+      "action": "Error",
+      "justification": "[PlatformCop] Page record methods require a SourceTable - ALCops default."
+    },
+    {
+      "id": "PC0019",
+      "action": "Error",
+      "justification": "[PlatformCop] Invalid single-quote escaping in filter string - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0020",
+      "action": "Error",
+      "justification": "[PlatformCop] Incompatible field types across TransferFields - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0021",
+      "action": "Error",
+      "justification": "[PlatformCop] Inconsistent field names across TransferFields - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0022",
+      "action": "Error",
+      "justification": "[PlatformCop] Possible overflow when assigning text to a smaller target type. - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0023",
+      "action": "Error",
+      "justification": "[PlatformCop] Incorrect 'IsHandled' parameter assignment. - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0024",
+      "action": "Info",
+      "justification": "[PlatformCop] The 'ApplicationArea' property is not applicable to API pages. - ALCops default."
+    },
+    {
+      "id": "PC0025",
+      "action": "Error",
+      "justification": "[PlatformCop] The ODataKeyFields property should use the SystemId field. - ALCops default."
+    },
+    {
+      "id": "PC0026",
+      "action": "Warning",
+      "justification": "[PlatformCop] Mandatory fields must be exposed on API pages. - ALCops default."
+    },
+    {
+      "id": "PC0027",
+      "action": "Error",
+      "justification": "[PlatformCop] Avoid triggering table logic on temporary records - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0028",
+      "action": "Error",
+      "justification": "[PlatformCop] Table relation field length mismatch - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0029",
+      "action": "Info",
+      "justification": "[PlatformCop] Use CreateSequentialGuid() instead of CreateGuid() for key fields - ALCops default."
+    },
+    {
+      "id": "PC0030",
+      "action": "Info",
+      "justification": "[PlatformCop] Use partial records on read operation - ALCops default."
+    },
+    {
+      "id": "PC0031",
+      "action": "Warning",
+      "justification": "[PlatformCop] Partial records cause JIT load on full-field operations - ALCops default."
+    },
+    {
+      "id": "PC0032",
+      "action": "Error",
+      "justification": "[PlatformCop] Report layout property exceeds maximum length - ALCops default."
+    },
+    {
+      "id": "PC0033",
+      "action": "Warning",
+      "justification": "[PlatformCop] Duplicate OData EntityName on page controls - ALCops default."
+    },
+    {
+      "id": "PC0034",
+      "action": "Error",
+      "justification": "[PlatformCop] Placeholder argument count mismatch - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0035",
+      "action": "Warning",
+      "justification": "[PlatformCop] Use SetAutoCalcFields instead of CalcFields inside loops - ALCops default."
+    },
+    {
+      "id": "PC0036",
+      "action": "Error",
+      "justification": "[PlatformCop] SetRecord() does not support temporary records - Runtime/data correctness; never acceptable in a PTE."
+    },
+    {
+      "id": "PC0037",
+      "action": "Info",
+      "justification": "[PlatformCop] Use Validate() instead of direct field assignment - Validate() vs assignment is contextual (setup/tests assign deliberately); advisory."
+    },
+    {
+      "id": "PC0038",
+      "action": "Warning",
+      "justification": "[PlatformCop] Not all code paths return a value - Not all code paths return a value."
+    },
+    {
+      "id": "TA0000",
+      "action": "Warning",
+      "justification": "[TestAutomationCop] Analyzer threw an unhandled exception - Analyzer crashed: surface it so a broken analyzer on Linux never silently stops checking."
+    },
+    {
+      "id": "TA0001",
+      "action": "Warning",
+      "justification": "[TestAutomationCop] Global procedures in test codeunits must be test methods - Test codeunits: helpers should be local; library codeunits are not Subtype=Test."
+    }
+  ]
+}

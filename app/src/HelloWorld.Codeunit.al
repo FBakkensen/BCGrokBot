@@ -5,6 +5,7 @@ namespace FlemmingBakkensen.BCGrokBot;
 /// </summary>
 codeunit 50100 "Hello World"
 {
+    Access = Public;
     /// <summary>
     /// Returns the greeting text.
     /// </summary>

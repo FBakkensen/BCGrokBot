@@ -1,0 +1,17 @@
+{
+  "al.enableCodeAnalysis": true,
+  "al.codeAnalyzers": [
+    "${CodeCop}",
+    "${UICop}",
+    "${PerTenantExtensionCop}",
+    "${analyzerFolder}ALCops.Common.dll",
+    "${analyzerFolder}ALCops.ApplicationCop.dll",
+    "${analyzerFolder}ALCops.DocumentationCop.dll",
+    "${analyzerFolder}ALCops.FormattingCop.dll",
+    "${analyzerFolder}ALCops.LinterCop.dll",
+    "${analyzerFolder}ALCops.PlatformCop.dll",
+    "${analyzerFolder}ALCops.TestAutomationCop.dll"
+  ],
+  "al.ruleSetPath": "../bc-app.ruleset.json",
+  "al.packageCachePath": ["./.alpackages"]
+}

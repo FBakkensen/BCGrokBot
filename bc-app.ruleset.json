@@ -1,0 +1,7 @@
+{
+  "name": "bc-app ruleset",
+  "description": "Shared code analysis rules for app and test. Adjust severities here, not in code.",
+  "generalAction": null,
+  "includedRuleSets": [],
+  "rules": []
+}

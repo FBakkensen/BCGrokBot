@@ -1,0 +1,16 @@
+{
+  "id": "f6a7ebe7-1d1d-402b-a18e-0489a3af2fdc",
+  "name": "My BC App",
+  "publisher": "Flemming Bakkensen",
+  "version": "1.0.0.0",
+  "brief": "", "description": "",
+  "privacyStatement": "", "EULA": "", "help": "", "url": "", "logo": "",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "29.0.0.0",
+  "application": "29.0.0.0",
+  "idRanges": [ { "from": 50100, "to": 50149 } ],
+  "resourceExposurePolicy": { "allowDebugging": true, "allowDownloadingSource": true, "includeSourceInSymbolFile": true },
+  "runtime": "18.0",
+  "features": [ "NoImplicitWith", "TranslationFile" ]
+}

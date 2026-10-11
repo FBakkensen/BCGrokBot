@@ -1,0 +1,10 @@
+.alpackages/
+.alcache/
+.snapshots/
+*.app
+!**/assets/*.app
+.vscode/launch.json
+rad.json
+*.g.xlf
+output/
+.analyzers/

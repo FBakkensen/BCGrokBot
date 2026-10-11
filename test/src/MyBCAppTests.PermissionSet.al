@@ -1,3 +1,7 @@
+namespace FlemmingBakkensen.MyBCApp.Test;
+
+using FlemmingBakkensen.MyBCApp;
+
 permissionset 50150 "My BC App Tests"
 {
     Caption = 'My BC App Tests', MaxLength = 30;

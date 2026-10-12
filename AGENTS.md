@@ -27,6 +27,7 @@ Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agen
 | Publish main app to the container | `scripts/publish.sh` |
 | Remove our apps from the container | `scripts/unpublish.sh ["Name" ...]` |
 | Run tests inside real BC | `scripts/test-integration.sh` |
+| Web verification user + demo data | `scripts/setup-web-demo.sh` (SALESUSER1 / Sales123!) |
 | Proof with evidence (`output/verify/<RUN_ID>/`) | `scripts/verify.sh doctor\|unit\|integration\|installed\|all` |
 | Update the BCApps reference | `scripts/ref-sync.sh` |
 | Update BCQuality and our custom rules | `scripts/bcq-sync.sh` |
@@ -92,3 +93,9 @@ When the operator corrects you: fix the mistake, add or adjust a row here, and e
 6. **Verify:** `/verify-bcgrokbot` (`scripts/verify.sh all`, plus web client screenshots via the browser agent). Add or update the feature file in `.cursor/skills/verify-bcgrokbot/features/`.
 7. **Adversarial review:** `/interrogate` on the branch.
 8. **Commit:** one logical change per commit. After repeated corrections, `/correct`.
+
+## Test conventions
+
+- Container-only test codeunits (Permissions Mock, CRONUS data) are listed in `CONTAINER_ONLY_CODEUNITS` in `scripts/test-dev.sh`, so al-runner skips them. al-runner does no permission enforcement.
+- Permission tests set `TestPermissions = Disabled` and lower the context explicitly with `Permissions Mock` (`Set('D365 BUS FULL ACCESS')` + `Assign(...)`). Do all setup before the first `Set`. Don't toggle Stop/Set inside a test.
+- Unique fixture keys use `CreateGuid()`, not `Any`. `Any` repeats values across tests under codeunit isolation.

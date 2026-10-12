@@ -1,6 +1,8 @@
 namespace FlemmingBakkensen.BCGrokBot.Test;
 
 using FlemmingBakkensen.BCGrokBot;
+using FlemmingBakkensen.BCGrokBot.Test.SalesAssignment;
+using FlemmingBakkensen.BCGrokBot.Test.WebDemo;
 
 /// <summary>
 /// Grants access to BCGrokBot and its test objects.
@@ -11,5 +13,11 @@ permissionset 50150 "BCGrokBot.Test"
     Caption = 'BCGrokBot.Test', MaxLength = 30;
     Assignable = true;
     IncludedPermissionSets = "BCGrokBot";
-    Permissions = codeunit "Hello World Test" = X;
+    Permissions = codeunit "BGB Sales Assign. Perm. Tests" = X,
+                  codeunit "BGB Sales Assign. Unit Tests" = X,
+                  codeunit "BGB Web Demo Install" = X,
+                  codeunit "BGB Web Demo Registration" = X,
+                  codeunit "BGB Web Demo Setup" = X,
+                  codeunit "BGB Web Demo Upgrade" = X,
+                  codeunit "Hello World Test" = X;
 }

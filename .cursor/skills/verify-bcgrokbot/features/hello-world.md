@@ -19,8 +19,8 @@ Preconditions:
 - Baseline preconditions from the README.
 - `scripts/verify.sh integration` has run at least once since the last DB reset. That publishes "BCGrokBot.Test".
 
-- **Unit.** Run `RUN_ID=<id> scripts/verify.sh unit`. `unit.txt` shows `Tests: 1 passed 1 failed 0` and `Result: PASSED`.
-- **Container.** Run `RUN_ID=<id> scripts/verify.sh integration`. `integration.txt` ends with `1 total, 1 passed, 0 failed`, and `junit.xml` contains `GreetingIsHelloWorld`.
+- **Unit.** Run `RUN_ID=<id> scripts/verify.sh unit`. `unit.txt` shows `failed 0`, `Result: PASSED` and includes `GreetingIsHelloWorld`.
+- **Container.** Run `RUN_ID=<id> scripts/verify.sh integration`. `integration.txt` ends with `0 failed`, and `junit.xml` contains `GreetingIsHelloWorld`.
 - **Web, open tool.** Open `http://localhost:8080/?page=130451`. The page caption is "AL Test Tool". Screenshot `web-hello-world-before.png`.
 - **Web, load tests.** If codeunit 50150 isn't listed, choose the action **Get Test Codeunits**, then **Select Test Codeunits**, and pick `50150 Hello World Test`. The lines show codeunit 50150 and function `GreetingIsHelloWorld`.
 - **Web, run.** Choose **Run Tests** (or **Run All**). Afterwards the line for `GreetingIsHelloWorld` shows Result `Success`. Screenshot `web-hello-world-after.png` with the caption, the codeunit line and the Result column visible.

@@ -1,6 +1,9 @@
 namespace FlemmingBakkensen.BCGrokBot.Test.WebDemo;
 
+using FlemmingBakkensen.BCGrokBot.ProjectHierarchy;
+using FlemmingBakkensen.BCGrokBot.Test.ProjectHierarchy;
 using Microsoft.CRM.Team;
+using Microsoft.Projects.Project.Job;
 using Microsoft.Sales.Customer;
 using Microsoft.Sales.Document;
 using System.Security.User;
@@ -13,7 +16,8 @@ codeunit 50153 "BGB Web Demo Setup"
 {
     Access = Public;
     Permissions = tabledata Customer = rim,
-                  tabledata "Sales Header" = rim,
+                  tabledata Job = rmd,
+                  tabledata "Sales Header" = rimd,
                   tabledata "Salesperson/Purchaser" = rim,
                   tabledata "User Setup" = rim;
 
@@ -24,6 +28,15 @@ codeunit 50153 "BGB Web Demo Setup"
         OwnCustomerTok: Label 'BGB-C-OWN', Locked = true;
         OtherCustomerTok: Label 'BGB-C-OTHER', Locked = true;
         NoSalespersonCustomerTok: Label 'BGB-C-NOSP', Locked = true;
+        ProjCustomerATok: Label 'BGB-PC-A', Locked = true;
+        ProjCustomerBTok: Label 'BGB-PC-B', Locked = true;
+        ProjSellToTok: Label 'BGB-PC-S', Locked = true;
+        ProjTopTok: Label 'BGB-P-TOP', Locked = true;
+        ProjChild1Tok: Label 'BGB-P-C1', Locked = true;
+        ProjChild2Tok: Label 'BGB-P-C2', Locked = true;
+        ProjGrandChild1Tok: Label 'BGB-P-G1', Locked = true;
+        ProjGrandChild2Tok: Label 'BGB-P-G2', Locked = true;
+        ProjDoneTok: Label 'OK: %1 <- %2, %3; %3 <- %4 (%6), %5', Locked = true;
         DoneTok: Label 'OK: %1 -> %2; customers %3 (%2), %4 (%5), %6 (no salesperson); go-live order %7', Locked = true;
 
     /// <summary>
@@ -109,5 +122,65 @@ codeunit 50153 "BGB Web Demo Setup"
         SalesHeader.Validate("Sell-to Customer No.", CustomerNo);
         SalesHeader.Modify(true);
         exit(SalesHeader."No.");
+    end;
+
+    /// <summary>
+    /// Creates (or recreates) the project hierarchy demo: TOP (customer A) with CHILD 1 (B) and CHILD 2 (sell-to S,
+    /// bill-to A), CHILD 2 with GRANDCHILD 1 (A, foreign invoice currency) and GRANDCHILD 2 (B). Each project has one
+    /// task with one billable resource line. Open demo invoices are deleted first, which releases their planning lines.
+    /// </summary>
+    /// <returns>A summary of the demo data.</returns>
+    procedure SetupProjectHierarchyDemo(): Text
+    var
+        TopJob: Record Job;
+        Job: Record Job;
+        Customer: Record Customer;
+        ProjectTestData: Codeunit "BGB Project Test Data";
+        CurrencyCode: Code[10];
+    begin
+        DeleteProjectDemo();
+        ProjectTestData.UpsertCustomer(ProjCustomerATok, 'BGB Project Customer A');
+        ProjectTestData.UpsertCustomer(ProjCustomerBTok, 'BGB Project Customer B');
+        ProjectTestData.UpsertCustomer(ProjSellToTok, 'BGB Project Sell-to S (billed to A)');
+        CurrencyCode := ProjectTestData.GetForeignCurrency();
+
+        ProjectTestData.CreateProject(TopJob, ProjTopTok, 'Hierarchy demo: top', '', ProjCustomerATok, '', '');
+        Customer.Get(ProjCustomerATok);
+        TopJob.Validate("Payment Terms Code", ProjectTestData.GetOtherPaymentTerms(Customer."Payment Terms Code"));
+        TopJob.Validate("External Document No.", 'PO-TOP-4711');
+        TopJob."Your Reference" := 'Top project ref';
+        TopJob.Modify(true);
+        ProjectTestData.CreateTaskWithBillableLine(TopJob, '100', 1, 100);
+        ProjectTestData.CreateProject(Job, ProjChild1Tok, 'Hierarchy demo: child 1 (B)', ProjTopTok, ProjCustomerBTok, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 2, 100);
+        ProjectTestData.CreateProject(Job, ProjChild2Tok, 'Hierarchy demo: child 2 (S, bill A)', ProjTopTok, ProjSellToTok, ProjCustomerATok, '');
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 3, 100);
+        ProjectTestData.CreateProject(Job, ProjGrandChild1Tok, 'Hierarchy demo: grandchild 1 (A, ' + CurrencyCode + ')', ProjChild2Tok, ProjCustomerATok, '', CurrencyCode);
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 4, 100);
+        ProjectTestData.CreateProject(Job, ProjGrandChild2Tok, 'Hierarchy demo: grandchild 2 (B)', ProjChild2Tok, ProjCustomerBTok, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 5, 100);
+        exit(StrSubstNo(ProjDoneTok, ProjTopTok, ProjChild1Tok, ProjChild2Tok, ProjGrandChild1Tok, ProjGrandChild2Tok, CurrencyCode));
+    end;
+
+    local procedure DeleteProjectDemo()
+    var
+        SalesHeader: Record "Sales Header";
+        Job: Record Job;
+        ProjectHierarchyMgt: Codeunit "BGB Project Hierarchy Mgt.";
+        ProjectNos: List of [Code[20]];
+        i: Integer;
+    begin
+        SalesHeader.SetRange("Document Type", SalesHeader."Document Type"::Invoice);
+        SalesHeader.SetFilter("Bill-to Customer No.", '%1|%2', ProjCustomerATok, ProjCustomerBTok);
+        if SalesHeader.FindSet() then
+            repeat
+                SalesHeader.Delete(true);
+            until SalesHeader.Next() = 0;
+        if not Job.Get(ProjTopTok) then
+            exit;
+        ProjectNos := ProjectHierarchyMgt.GetProjectAndDescendants(ProjTopTok);
+        for i := ProjectNos.Count() downto 1 do
+            if Job.Get(ProjectNos.Get(i)) then
+                Job.Delete(true);
     end;
 }

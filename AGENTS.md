@@ -29,6 +29,7 @@ Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agen
 | Run tests inside real BC | `scripts/test-integration.sh` |
 | Deploy main app to SaaS sandbox (CD does this on main) | `scripts/deploy-saas.sh [--dry-run] [app]` |
 | Web verification user + demo data | `scripts/setup-web-demo.sh` (SALESUSER1 / Sales123!) |
+| Project hierarchy demo data (BGB-P-* tree) | `scripts/setup-project-demo.sh` |
 | Proof with evidence (`output/verify/<RUN_ID>/`) | `scripts/verify.sh doctor\|unit\|integration\|installed\|all` |
 | Update the BCApps reference | `scripts/ref-sync.sh` |
 | Update BCQuality and our custom rules | `scripts/bcq-sync.sh` |

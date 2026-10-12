@@ -159,6 +159,27 @@ codeunit 50158 "BGB Hierarchy Invoicing Tests"
         Assert.AreEqual(300 + 400 + 500, PriceAmounts[12], 'subtree of CHILD2');
     end;
 
+    [Test]
+    procedure ParentProjectEditableOnCardAndList()
+    var
+        Job: Record Job;
+        JobCard: TestPage "Job Card";
+    begin
+        // [SCENARIO] Parent Project No. can be edited on the Project Card
+        // [GIVEN] the demo tree
+        CreateTree();
+        // [WHEN] the card of a subproject is opened in edit mode
+        Job.Get(GrandChild2No);
+        JobCard.OpenEdit();
+        JobCard.GoToRecord(Job);
+        // [THEN] the field is editable and can be changed to another project
+        Assert.IsTrue(JobCard."BGB Parent Project No.".Editable(), 'Parent Project No. editable on card');
+        JobCard."BGB Parent Project No.".SetValue(Child1No);
+        JobCard.Close();
+        Job.Get(GrandChild2No);
+        Assert.AreEqual(Child1No, Job."BGB Parent Project No.", 'parent changed from the card');
+    end;
+
     [RequestPageHandler]
     procedure StandardCreateInvoiceRequestPageHandler(var JobCreateSalesInvoice: TestRequestPage "Job Create Sales Invoice")
     begin

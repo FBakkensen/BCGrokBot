@@ -112,6 +112,7 @@ Local use: `scripts/deploy-saas.sh --dry-run` checks the package and needs no se
 1. **Entra app registration** in tenant `2988834f-4330-4795-9445-5a155672e1a7`. Create it single-tenant and add a client secret.
    - Under API permissions, add **Dynamics 365 Business Central → Application permissions → `API.ReadWrite.All` and `Automation.ReadWrite.All`**.
    - Then choose **Grant admin consent**.
+   - Under Authentication → Web, add the redirect URI **`https://businesscentral.dynamics.com/OAuthLanding.htm`**. Without it, **Grant Consent** on BC page 9860 fails.
 2. **In the BC sandbox**, open page *Microsoft Entra Applications* (`?page=9860`) and create a new entry with the app's Client ID.
    - Set State = Enabled.
    - Add permission sets **`EXTEN. MGT. - ADMIN`** and **`D365 AUTOMATION`**.

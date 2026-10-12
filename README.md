@@ -29,6 +29,7 @@ All scripts are idempotent, set up `DOTNET_ROOT`/`PATH`, and stop on the first e
 | `scripts/bc-reset.sh` | Wipes the database (`down -v`) and starts fresh. |
 | `scripts/publish.sh` | Builds, then publishes the main app to the dev endpoint (forcesync). |
 | `scripts/test-integration.sh` | Builds, publishes, and runs test codeunits 50150..50199 in the container. JUnit output goes to `output/junit.xml`. |
+| `scripts/setup-web-demo.sh` | Dev container only. Creates the non-SUPER web user SALESUSER1 / Sales123! and the salesperson-assignment demo data. |
 
 Web client: http://localhost:8080/ (BCRUNNER / Admin123!). Dev endpoint: http://localhost:7049/BC/dev.
 

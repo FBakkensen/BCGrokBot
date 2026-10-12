@@ -29,3 +29,4 @@ Each feature file has an H1 title and a one-paragraph description, then exactly 
 
 - [App installation](./app-installation.md): BCGrokBot and its tests are installed in the tenant (Extension Management).
 - [Hello World greeting](./hello-world.md): codeunit 50100 returns `Hello, World!`, proved by al-runner, the container test runner, and the AL Test Tool page.
+- [Salesperson assignment](./salesperson-assignment.md): only the user linked to the customer's salesperson can create or release sales documents; changing the assignment requires BGB SALESP ADMIN. Web user SALESUSER1 is created by `scripts/setup-web-demo.sh`.

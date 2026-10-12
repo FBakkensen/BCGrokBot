@@ -31,3 +31,4 @@ Each feature file has an H1 title and a one-paragraph description, then exactly 
 - [Hello World greeting](./hello-world.md): codeunit 50100 returns `Hello, World!`, proved by al-runner, the container test runner, and the AL Test Tool page.
 - [Salesperson assignment](./salesperson-assignment.md): only the user linked to the customer's salesperson can create or release sales documents; changing the assignment requires BGB SALESP ADMIN. Web user SALESUSER1 is created by `scripts/setup-web-demo.sh`.
 - [Project hierarchy](./project-hierarchy.md): parent projects, hierarchy totals, and one invoice per bill-to customer and currency across a hierarchy (`scripts/setup-project-demo.sh`).
+- [Project hierarchy analysis](./project-hierarchy-analysis.md): report 50101 with Excel layout (Data sheet, pivot tables refreshed on open, chart); `scripts/run-project-analysis.sh` saves the xlsx for BGB-P-TOP.

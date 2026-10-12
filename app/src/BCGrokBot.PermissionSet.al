@@ -1,5 +1,6 @@
 namespace FlemmingBakkensen.BCGrokBot;
 
+using FlemmingBakkensen.BCGrokBot.ProjectAnalysis;
 using FlemmingBakkensen.BCGrokBot.ProjectHierarchy;
 using FlemmingBakkensen.BCGrokBot.SalesAssignment;
 
@@ -11,11 +12,13 @@ permissionset 50100 "BCGrokBot"
     Access = Public;
     Caption = 'BCGrokBot', MaxLength = 30;
     Assignable = true;
-    Permissions = table "BGB Sales Assign. Bypass" = X,
+    Permissions = table "BGB Project Analysis Buffer" = X,
+                  table "BGB Sales Assign. Bypass" = X,
                   table "BGB Sales Assign. Issue" = X,
                   table "BGB Salesp. Assign. Admin" = X,
                   codeunit "BGB Hierarchy Inv. Binding" = X,
                   codeunit "BGB Hierarchy Invoicing" = X,
+                  codeunit "BGB Project Analysis Mgt." = X,
                   codeunit "BGB Project Hierarchy Mgt." = X,
                   codeunit "BGB Project Hierarchy Subs." = X,
                   codeunit "BGB Sales Assign. Go-Live" = X,
@@ -25,5 +28,6 @@ permissionset 50100 "BCGrokBot"
                   page "BGB Hierarchy Totals FactBox" = X,
                   page "BGB Sales Assign. Go-Live" = X,
                   page "BGB Subprojects" = X,
-                  report "BGB Create Hierarchy Invoices" = X;
+                  report "BGB Create Hierarchy Invoices" = X,
+                  report "BGB Project Hierarchy Analysis" = X;
 }

@@ -90,7 +90,7 @@ codeunit 50159 "BGB Project Test Data"
     end;
 
     /// <summary>
-    /// Creates a posting task with one billable resource planning line on the work date.
+    /// Creates a posting task with one budget-and-billable resource planning line on the work date.
     /// </summary>
     /// <param name="Job">The project.</param>
     /// <param name="JobTaskNo">The task number.</param>
@@ -115,7 +115,7 @@ codeunit 50159 "BGB Project Test Data"
         JobPlanningLine.Validate("Line No.", 10000);
         JobPlanningLine.Insert(true);
         JobPlanningLine.Validate("Planning Date", WorkDate());
-        JobPlanningLine.Validate("Line Type", JobPlanningLine."Line Type"::Billable);
+        JobPlanningLine.Validate("Line Type", JobPlanningLine."Line Type"::"Both Budget and Billable");
         JobPlanningLine.Validate(Type, JobPlanningLine.Type::Resource);
         JobPlanningLine.Validate("No.", GetResourceNo());
         JobPlanningLine.Validate(Quantity, Quantity);

@@ -1,5 +1,6 @@
 namespace FlemmingBakkensen.BCGrokBot.Test.WebDemo;
 
+using FlemmingBakkensen.BCGrokBot.ProjectAnalysis;
 using FlemmingBakkensen.BCGrokBot.ProjectHierarchy;
 using FlemmingBakkensen.BCGrokBot.Test.ProjectHierarchy;
 using Microsoft.CRM.Team;
@@ -7,6 +8,8 @@ using Microsoft.Projects.Project.Job;
 using Microsoft.Sales.Customer;
 using Microsoft.Sales.Document;
 using System.Security.User;
+using System.Text;
+using System.Utilities;
 
 /// <summary>
 /// Dev/verification only (lives in the test app, never shipped): idempotent demo data for web client verification
@@ -182,5 +185,26 @@ codeunit 50153 "BGB Web Demo Setup"
         for i := ProjectNos.Count() downto 1 do
             if Job.Get(ProjectNos.Get(i)) then
                 Job.Delete(true);
+    end;
+
+    /// <summary>
+    /// Runs report "BGB Project Hierarchy Analysis" (Excel layout) for the demo top project and returns the xlsx as Base64.
+    /// </summary>
+    /// <returns>The Excel file, Base64 encoded.</returns>
+    procedure RunProjectAnalysis(): Text
+    var
+        Job: Record Job;
+        TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        RecRef: RecordRef;
+        OutStr: OutStream;
+        InStr: InStream;
+    begin
+        Job.SetRange("No.", ProjTopTok);
+        RecRef.GetTable(Job);
+        TempBlob.CreateOutStream(OutStr);
+        Report.SaveAs(Report::"BGB Project Hierarchy Analysis", '', ReportFormat::Excel, OutStr, RecRef);
+        TempBlob.CreateInStream(InStr);
+        exit(Base64Convert.ToBase64(InStr));
     end;
 }

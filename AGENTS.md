@@ -118,7 +118,7 @@ Local use: `scripts/deploy-saas.sh --dry-run` checks the package and needs no se
    - Choose **Grant Consent**.
 3. **GitHub, environment `sandbox`** (Settings → Environments; it's auto-created on the first deploy if missing):
    - secrets `BC_CLIENT_ID` and `BC_CLIENT_SECRET`;
-   - variables `BC_TENANT_ID` (`2988834f-4330-4795-9445-5a155672e1a7`) and `BC_ENVIRONMENT` (the sandbox name, e.g. `Sandbox`).
+   - variables `BC_TENANT_ID` (`2988834f-4330-4795-9445-5a155672e1a7`) and `BC_ENVIRONMENT` (the sandbox name, currently `UAT`).
    - Repository-level secrets and variables also work. Optionally add required reviewers or a branch restriction (`main`) on the environment.
 
 The job fails when the token, upload or deployment fails, or after 30 min without a final status. On failure, check *Extension Deployment Status* in the sandbox.

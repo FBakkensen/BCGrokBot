@@ -57,10 +57,14 @@ api() {
   local out code
   out=$(curl -sS -X "$method" "${AUTH[@]}" -w '\n%{http_code}' "$url" "$@") || die "$method $url: curl failed"
   code=${out##*$'\n'}; out=${out%$'\n'*}
+  if [ "$code" = 401 ]; then
+    die "$method $url -> HTTP 401: $out
+    Hint: the Entra app must be registered in the environment (page 9860 'Microsoft Entra Applications', State Enabled, permission sets EXTEN. MGT. - ADMIN + D365 AUTOMATION, Grant Consent)."
+  fi
   [ "$code" -lt 400 ] || die "$method $url -> HTTP $code: $out"
   printf '%s' "$out"
 }
-json() { python3 -c "import sys,json;d=json.load(sys.stdin);print($1)"; }
+json() { python3 -c "import sys,json;d=json.load(sys.stdin);print($1)" 2>/dev/null; }
 
 if [ -z "${BC_COMPANY_ID:-}" ]; then
   BC_COMPANY_ID=$(api GET "$BASE/companies" | json 'd["value"][0]["id"]') || die "no company found"

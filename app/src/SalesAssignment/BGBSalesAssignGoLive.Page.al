@@ -31,7 +31,11 @@ page 50100 "BGB Sales Assign. Go-Live"
                 field("Customer No."; Rec."Customer No.") { }
                 field("Customer Name"; Rec."Customer Name") { }
                 field("Salesperson Code"; Rec."Salesperson Code") { }
-                field("Document Type"; Rec."Document Type") { }
+                field("Document Type"; Rec."Document Type")
+                {
+                    // Enum value 0 is Quote: hide it on customer rows, which have no document
+                    HideValue = HideDocumentType;
+                }
                 field("Document No."; Rec."Document No.") { }
                 field(Description; Rec.Description) { }
             }
@@ -87,6 +91,14 @@ page 50100 "BGB Sales Assign. Go-Live"
             actionref(OpenDocument_Promoted; OpenDocument) { }
         }
     }
+
+    var
+        HideDocumentType: Boolean;
+
+    trigger OnAfterGetRecord()
+    begin
+        HideDocumentType := Rec."Document No." = '';
+    end;
 
     trigger OnOpenPage()
     begin

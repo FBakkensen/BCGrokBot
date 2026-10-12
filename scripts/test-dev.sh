@@ -5,7 +5,7 @@ need dotnet
 [ -f "$ALRUNNER_DLL" ] || die "al-runner not found at $ALRUNNER_DLL (build it from BusinessCentral.AL.Runner main)"
 cd "$REPO_ROOT"
 # Container-only test codeunits (need real permission enforcement / CRONUS data); run by test-integration.sh.
-CONTAINER_ONLY_CODEUNITS=(50152 50158)
+CONTAINER_ONLY_CODEUNITS=(50152 50158 50161)
 EXCLUDES=()
 for c in "${CONTAINER_ONLY_CODEUNITS[@]}"; do EXCLUDES+=(--exclude-test "Codeunit$c"); done
 log "Running al-runner (BC 29.0) on ./app ./test (excluding container-only: ${CONTAINER_ONLY_CODEUNITS[*]})"

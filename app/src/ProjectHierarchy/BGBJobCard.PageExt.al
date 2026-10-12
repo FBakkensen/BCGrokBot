@@ -1,5 +1,6 @@
 namespace FlemmingBakkensen.BCGrokBot.ProjectHierarchy;
 
+using FlemmingBakkensen.BCGrokBot.ProjectAnalysis;
 using Microsoft.Projects.Project.Job;
 
 pageextension 50100 "BGB Job Card" extends "Job Card"
@@ -30,6 +31,28 @@ pageextension 50100 "BGB Job Card" extends "Job Card"
 
     actions
     {
+        addlast(reporting)
+        {
+            action(BGBProjectHierarchyAnalysis)
+            {
+                ApplicationArea = Jobs;
+                Caption = 'Project Hierarchy Analysis';
+                Image = AnalysisView;
+                ToolTip = 'Analyze this project and all its subprojects in Excel: statistics per project with pivot tables.';
+
+                trigger OnAction()
+                var
+                    Job: Record Job;
+                begin
+                    Job.SetRange("No.", Rec."No.");
+                    Report.Run(Report::"BGB Project Hierarchy Analysis", true, false, Job);
+                end;
+            }
+        }
+        addlast(Category_Report)
+        {
+            actionref(BGBProjectHierarchyAnalysis_Promoted; BGBProjectHierarchyAnalysis) { }
+        }
         addafter("Create Job &Sales Invoice")
         {
             action(BGBCreateHierarchyInvoices)

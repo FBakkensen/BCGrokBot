@@ -44,3 +44,25 @@ Web client: http://localhost:8080/ (BCRUNNER / Admin123!). Dev endpoint: http://
 - `scripts/bcq-sync.sh`: pinned BCQuality (`quality/BCQUALITY_PIN`) at `/workspace/ref/BCQuality`, plus our custom rules from `quality/bcquality-custom/`.
 - `.cursor/skills/bc-review/`: BCQuality review (AppSource, breaking-change and agent reviews disabled).
 - `.cursor/skills/verify-bcgrokbot/`: verification skill and feature map. `scripts/verify.sh all` writes evidence to `output/verify/<RUN_ID>/`.
+
+## Continuous deployment (sandbox)
+
+On every push to `main`, after **Build and unit test** passes, the `deploy-sandbox` job (GitHub Environment `sandbox`) publishes the **main app only** to a BC SaaS sandbox. It uses the Automation API via `scripts/deploy-saas.sh`. CI sets the version to `1.0.<run number>.<run attempt>` (`scripts/set-version.sh`), so each deploy is newer than the last. Locally the version stays `1.0.0.0`. The deploy job is skipped on pull requests.
+
+Local use: `scripts/deploy-saas.sh --dry-run` checks the package and needs no secrets. A real deploy needs `BC_TENANT_ID`, `BC_ENVIRONMENT`, `BC_CLIENT_ID` and `BC_CLIENT_SECRET` in the environment.
+
+### One-time setup (Entra + BC + GitHub)
+
+1. **Entra app registration** in tenant `2988834f-4330-4795-9445-5a155672e1a7`. Create it single-tenant and add a client secret.
+   - Under API permissions, add **Dynamics 365 Business Central → Application permissions → `API.ReadWrite.All` and `Automation.ReadWrite.All`**.
+   - Then choose **Grant admin consent**.
+2. **In the BC sandbox**, open page *Microsoft Entra Applications* (`?page=9860`) and create a new entry with the app's Client ID.
+   - Set State = Enabled.
+   - Add permission sets **`EXTEN. MGT. - ADMIN`** and **`D365 AUTOMATION`**.
+   - Choose **Grant Consent**.
+3. **GitHub, environment `sandbox`** (Settings → Environments; it's auto-created on the first deploy if missing):
+   - secrets `BC_CLIENT_ID` and `BC_CLIENT_SECRET`;
+   - variables `BC_TENANT_ID` (`2988834f-4330-4795-9445-5a155672e1a7`) and `BC_ENVIRONMENT` (the sandbox name, e.g. `Sandbox`).
+   - Repository-level secrets and variables also work. Optionally add required reviewers or a branch restriction (`main`) on the environment.
+
+The job fails when the token, upload or deployment fails, or after 30 min without a final status. On failure, check *Extension Deployment Status* in the sandbox.

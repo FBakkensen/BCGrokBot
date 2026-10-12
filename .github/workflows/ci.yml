@@ -7,7 +7,8 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # PRs: cancel superseded runs. main: never cancel (a run may be deploying)
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # al-runner: NuGet release has no BC 29 support yet -> build from source at this commit
@@ -45,6 +46,11 @@ jobs:
             test/.alpackages
             .analyzers
           key: al-deps-${{ hashFiles('get-symbols.sh', 'scripts/common.sh') }}
+
+      - name: Stamp main app version (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # 1.0.<run number>.<attempt>: every deploy is newer than the previous one
+        run: scripts/set-version.sh "${{ github.run_number }}" "${{ github.run_attempt }}"
 
       - name: Build (analyzers, warnings fail)
         run: scripts/build.sh
@@ -88,3 +94,30 @@ jobs:
             app/output/*.app
             test/output/*.app
           if-no-files-found: warn
+
+  deploy-sandbox:
+    name: Deploy to sandbox
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: sandbox
+    # never cancel a running deploy; queue the next one instead
+    concurrency:
+      group: deploy-sandbox
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: artifact
+
+      - name: Deploy main app via Automation API
+        env:
+          BC_TENANT_ID: ${{ vars.BC_TENANT_ID }}
+          BC_ENVIRONMENT: ${{ vars.BC_ENVIRONMENT }}
+          BC_CLIENT_ID: ${{ secrets.BC_CLIENT_ID }}
+          BC_CLIENT_SECRET: ${{ secrets.BC_CLIENT_SECRET }}
+        run: scripts/deploy-saas.sh artifact/app/output/app.app

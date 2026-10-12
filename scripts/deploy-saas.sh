@@ -99,9 +99,21 @@ rows.sort(key=lambda r: r.get("startedOn", ""), reverse=True)
 print(rows[0]["status"] if rows else "NotFound")')
   echo "    $(date -u +%H:%M:%S) $status"
   case "$status" in
-    Completed) ok "deployed $APP_NAME $APP_VERSION to $BC_ENVIRONMENT"; exit 0;;
+    Completed) ok "deployment status Completed for $APP_NAME $APP_VERSION"; break;;
     Failed) die "deployment failed; see Extension Deployment Status in $BC_ENVIRONMENT (started $STARTED)";;
   esac
   [ "$(date +%s)" -lt "$deadline" ] || die "timed out waiting for deployment (last status: $status)"
   sleep "${POLL_SECONDS:-10}"
 done
+
+log "Verifying $APP_NAME $APP_VERSION is installed (extensions list)"
+for _ in 1 2 3 4 5 6; do
+  installed=$(api GET "$C/extensions" | APP_NAME="$APP_NAME" APP_PUBLISHER="$APP_PUBLISHER" python3 -c '
+import sys, json, os
+for e in json.load(sys.stdin)["value"]:
+    if e["displayName"] == os.environ["APP_NAME"] and e["publisher"] == os.environ["APP_PUBLISHER"] and e["isInstalled"]:
+        print("%s.%s.%s.%s" % (e["versionMajor"], e["versionMinor"], e["versionBuild"], e["versionRevision"]))')
+  [ "$installed" = "$APP_VERSION" ] && { ok "installed: $APP_NAME $installed in $BC_ENVIRONMENT"; exit 0; }
+  sleep 10
+done
+die "$APP_NAME $APP_VERSION is not the installed version in $BC_ENVIRONMENT (installed: ${installed:-none})"

@@ -114,7 +114,7 @@ jobs:
           name: test-results
           path: artifact
 
-      - name: Deploy main app via Automation API
+      - name: Deploy main app via Automation API, then verify installed version
         env:
           BC_TENANT_ID: ${{ vars.BC_TENANT_ID }}
           BC_ENVIRONMENT: ${{ vars.BC_ENVIRONMENT }}

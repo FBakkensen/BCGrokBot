@@ -1,0 +1,16 @@
+# Opt-in only: BC_DOCKER_NETWORK=host (see scripts/common.sh).
+# Cloud agent VMs drop traffic on user-defined bridges unless dockerd programs
+# iptables-legacy (scripts/cloud-agent-install.sh does that, and then the
+# stock compose network works). Use this file when that firewall fix is not
+# in effect: host networking egresses, and SQL is reached on 127.0.0.1.
+# Published ports cannot be combined with network_mode: host; !reset drops them
+# (Compose 2.24+). The container then listens on its own ports (1433, 8080, …).
+services:
+  sql:
+    network_mode: host
+    ports: !reset []
+  bc:
+    network_mode: host
+    ports: !reset []
+    environment:
+      SQL_SERVER: 127.0.0.1

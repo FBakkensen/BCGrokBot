@@ -1,11 +1,47 @@
 # Shared settings for BCGrokBot scripts. Source, don't execute.
 set -euo pipefail
-export DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.dotnet}"
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/ci-pins.sh"
+if [ -z "${DOTNET_ROOT:-}" ]; then
+  if [ -x /usr/share/dotnet/dotnet ]; then
+    DOTNET_ROOT=/usr/share/dotnet
+  else
+    DOTNET_ROOT="$HOME/.dotnet"
+  fi
+fi
+export DOTNET_ROOT
 export PATH="$DOTNET_ROOT:$HOME/.dotnet/tools:$PATH"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BC_LINUX_DIR="${BC_LINUX_DIR:-/workspace/MsDyn365Bc.On.Linux}"
-ALRUNNER_DLL="${ALRUNNER_DLL:-/workspace/alrunner-bc29/al-runner.dll}"
-export BC_VERSION="${BC_VERSION:-29.0.54011.56009}"
+BCGROKBOT_CACHE="${BCGROKBOT_CACHE:-$HOME/.cache/bcgrokbot}"
+# Prebuilt al-runner from scripts/cloud-agent-install.sh. CI sets ALRUNNER_DLL.
+if [ -z "${ALRUNNER_DLL:-}" ]; then
+  ALRUNNER_DLL=""
+  for _alr in \
+    "$BCGROKBOT_CACHE/al-runner/al-runner.dll" \
+    /opt/bcgrokbot/al-runner/al-runner.dll \
+    /workspace/alrunner-bc29/al-runner.dll
+  do
+    if [ -f "$_alr" ]; then ALRUNNER_DLL="$_alr"; break; fi
+  done
+  ALRUNNER_DLL="${ALRUNNER_DLL:-/workspace/alrunner-bc29/al-runner.dll}"
+  unset _alr
+fi
+if [ -z "${BC_LINUX_DIR:-}" ]; then
+  BC_LINUX_DIR=""
+  for _bcd in \
+    "$BCGROKBOT_CACHE/MsDyn365Bc.On.Linux" \
+    /opt/bcgrokbot/MsDyn365Bc.On.Linux \
+    /workspace/MsDyn365Bc.On.Linux
+  do
+    if [ -f "$_bcd/docker-compose.yml" ]; then BC_LINUX_DIR="$_bcd"; break; fi
+  done
+  BC_LINUX_DIR="${BC_LINUX_DIR:-/workspace/MsDyn365Bc.On.Linux}"
+  unset _bcd
+fi
+if [ -z "${BC_ARTIFACTS_DIR:-}" ] && [ -f "$BCGROKBOT_CACHE/bc-artifacts/app/manifest.json" ]; then
+  export BC_ARTIFACTS_DIR="$BCGROKBOT_CACHE/bc-artifacts"
+fi
+export BC_VERSION="${BC_VERSION:-$(ci_pin ALRUNNER_BC_VERSION)}"
 export BC_WEBCLIENT="${BC_WEBCLIENT:-1}"
 BC_AUTH="${BC_AUTH:-BCRUNNER:Admin123!}"
 DEV_URL="${DEV_URL:-http://localhost:7049/BC/dev}"
@@ -16,7 +52,13 @@ ok()   { printf '\033[1;32m OK\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31mERR\033[0m %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "missing command: $1"; }
 SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO="sudo"
-dc() { (cd "$BC_LINUX_DIR" && $SUDO -E docker compose "$@"); }
+dc() {
+  local -a files=(-f "$BC_LINUX_DIR/docker-compose.yml")
+  if [ "${BC_DOCKER_NETWORK:-}" = "host" ]; then
+    files+=(-f "$REPO_ROOT/scripts/docker-compose.cloud-agent.yml")
+  fi
+  (cd "$BC_LINUX_DIR" && $SUDO -E docker compose "${files[@]}" "$@")
+}
 ALCOPS_VERSION="${ALCOPS_VERSION:-1.3.1}"
 ANALYZER_DIR="$REPO_ROOT/.analyzers"
 RULESET="$REPO_ROOT/BCGrokBot.ruleset.json"

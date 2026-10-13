@@ -74,7 +74,7 @@ Run it before the first drive, after anything surprising, and after every failed
 
 ## Isolation
 
-There is **one** BC container (fixed ports 7045–7085, 8080, SQL 11433). Runs cannot be parallel. Do not drive while another run is publishing or testing. Check with `scripts/verify.sh doctor` and `sudo docker compose -f /workspace/MsDyn365Bc.On.Linux/docker-compose.yml ps`.
+There is **one** BC container (fixed ports 7045–7085, 8080, SQL 11433). Runs cannot be parallel. Do not drive while another run is publishing or testing. Check with `scripts/verify.sh doctor`. The compose project is `BC_LINUX_DIR` from `scripts/common.sh` (cloud agents: `~/.cache/bcgrokbot/MsDyn365Bc.On.Linux`; otherwise `/workspace/MsDyn365Bc.On.Linux`).
 
 ## Helpers
 

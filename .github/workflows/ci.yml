@@ -11,9 +11,11 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  # Single source for al-runner / AL tool / BC version.
+  # scripts/ci-pins.sh (and the cloud-agent install) read this block.
   # al-runner: NuGet release has no BC 29 support yet -> build from source at this commit
   ALRUNNER_REPO: StefanMaron/BusinessCentral.AL.Runner
-  ALRUNNER_SHA: 9c2e53a512e1096aa72ce0321f4d711f92f77f96
+  ALRUNNER_SHA: 1aeb2bd44d62027f73ee725ca0f871ffebeed33d
   ALRUNNER_BC_VERSION: 29.0.54011.56009
   AL_TOOL_VERSION: 18.0.43.1464
   ALRUNNER_DLL: ${{ github.workspace }}/../alrunner-bc29/al-runner.dll

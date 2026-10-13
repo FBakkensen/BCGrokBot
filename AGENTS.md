@@ -124,3 +124,22 @@ Local use: `scripts/deploy-saas.sh --dry-run` checks the package and needs no se
    - Repository-level secrets and variables also work. Optionally add required reviewers or a branch restriction (`main`) on the environment.
 
 The job fails when the token, upload or deployment fails, or after 30 min without a final status. On failure, check *Extension Deployment Status* in the sandbox.
+
+## Cursor cloud agents
+
+Cloud Agent Builds run `scripts/cloud-agent-install.sh` (`.cursor/environment.json`) and snapshot the disk. A new agent boots from that snapshot and does not repeat the install. `scripts/cloud-agent-start.sh` starts dockerd on each boot. It does not start the BC container.
+
+Toolchain pins are the `env:` block and the `dotnet-version` list in `.github/workflows/ci.yml`. `scripts/ci-pins.sh` is the only reader. Do not copy those versions into a second file.
+
+After a successful Build the machine has:
+
+- .NET SDK channels from CI (`8.0.x` and `10.0.x`) in `/usr/share/dotnet`, with `dotnet` and `al` on `PATH`
+- AL compiler version `AL_TOOL_VERSION`, and ALCops on the first `scripts/build.sh`
+- al-runner built from `ALRUNNER_SHA`, at `~/.cache/bcgrokbot/al-runner/al-runner.dll`. `scripts/common.sh` uses that file when `ALRUNNER_DLL` is unset (CI still sets its own path)
+- BC 29 W1 symbols under `app/.alpackages` and `test/.alpackages`
+- `MsDyn365Bc.On.Linux` and the BC artifact cache under `~/.cache/bcgrokbot/` (`BC_ARTIFACTS_DIR`). `scripts/bc-up.sh` bind-mounts the cache so the container does not download artifacts
+- Docker images for that compose file. dockerd uses the `overlayfs` storage driver and **iptables-legacy**, which is what lets user-defined compose bridges forward and egress. `fuse-overlayfs` is not used
+
+Run `scripts/build.sh` then `scripts/test-dev.sh` for the fast loop. For the container, run `scripts/bc-up.sh` then `scripts/test-integration.sh`. If a future image drops compose-bridge traffic again, `BC_DOCKER_NETWORK=host` adds `scripts/docker-compose.cloud-agent.yml` (host networking, SQL at `127.0.0.1`).
+
+After this file lands on `main`, trigger a Build from the environment's Builds tab so the snapshot includes the install. Until that Build succeeds, new agents do not get the baked toolchain.

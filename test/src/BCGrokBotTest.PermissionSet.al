@@ -3,6 +3,7 @@ namespace FlemmingBakkensen.BCGrokBot.Test;
 using FlemmingBakkensen.BCGrokBot;
 using FlemmingBakkensen.BCGrokBot.Test.ProjectAnalysis;
 using FlemmingBakkensen.BCGrokBot.Test.ProjectHierarchy;
+using FlemmingBakkensen.BCGrokBot.Test.ProjectVersion;
 using FlemmingBakkensen.BCGrokBot.Test.SalesAssignment;
 using FlemmingBakkensen.BCGrokBot.Test.WebDemo;
 
@@ -17,6 +18,8 @@ permissionset 50150 "BCGrokBot.Test"
     IncludedPermissionSets = "BCGrokBot";
     Permissions = codeunit "BGB Hierarchy Invoicing Tests" = X,
                   codeunit "BGB Project Analysis Int Tests" = X,
+                  codeunit "BGB Version Compare Int Tests" = X,
+                  codeunit "BGB Version Compare Tests" = X,
                   codeunit "BGB Project Analysis Tests" = X,
                   codeunit "BGB Project Hierarchy Tests" = X,
                   codeunit "BGB Project Test Data" = X,

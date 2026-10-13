@@ -24,7 +24,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
   -o Dpkg::Options::=--force-confdef \
   -o Dpkg::Options::=--force-confold \
-  ca-certificates curl git unzip python3 xz-utils \
+  ca-certificates curl git unzip python3 time xz-utils \
   docker.io docker-compose-v2 iptables
 step_ok "packages"
 

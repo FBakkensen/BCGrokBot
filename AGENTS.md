@@ -139,6 +139,7 @@ After a successful Build the machine has:
 - BC 29 W1 symbols under `app/.alpackages` and `test/.alpackages`
 - `MsDyn365Bc.On.Linux` and the BC artifact cache under `~/.cache/bcgrokbot/` (`BC_ARTIFACTS_DIR`). `scripts/bc-up.sh` bind-mounts the cache so the container does not download artifacts
 - Docker images for that compose file. dockerd uses the `overlayfs` storage driver and **iptables-legacy**, which is what lets user-defined compose bridges forward and egress. `fuse-overlayfs` is not used
+- GNU `time` at `/usr/bin/time` (apt package `time`), so agents can time scripts with `/usr/bin/time -f %e`
 
 Run `scripts/build.sh` then `scripts/test-dev.sh` for the fast loop. For the container, run `scripts/bc-up.sh` then `scripts/test-integration.sh`. If a future image drops compose-bridge traffic again, `BC_DOCKER_NETWORK=host` adds `scripts/docker-compose.cloud-agent.yml` (host networking, SQL at `127.0.0.1`).
 

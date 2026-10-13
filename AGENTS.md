@@ -23,6 +23,7 @@ Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agen
 |---|---|
 | Compile both apps, analyzers on, warnings fail | `scripts/build.sh` (`STRICT=0` only for local exploration) |
 | Fast unit tests (no BC) | `scripts/test-dev.sh` |
+| Cursor Cloud Agent toolchain (CI mirror) | `scripts/cloud-agent-install.sh` (`.cursor/environment.json` `install`) |
 | Start / stop / wipe the BC container | `scripts/bc-up.sh` / `scripts/bc-down.sh` / `scripts/bc-reset.sh` |
 | Publish main app to the container | `scripts/publish.sh` |
 | Remove our apps from the container | `scripts/unpublish.sh ["Name" ...]` |
@@ -35,6 +36,8 @@ Business Central 29 **per-tenant extension** (PTE), W1. You are one of many agen
 | Update BCQuality and our custom rules | `scripts/bcq-sync.sh` |
 
 CI (`.github/workflows/ci.yml`, check **Build and unit test**) runs `build.sh` (STRICT) and al-runner tests on every PR and push to main. Container integration tests (`test-integration.sh`, `verify.sh integration`) are **not** in CI: run them locally before merging behaviour changes.
+
+Cursor Cloud Agents: `.cursor/environment.json` runs `scripts/cloud-agent-install.sh` on environment builds (CI-mirror toolchain: .NET 8+10, AL 18.0.x, BC 29 symbols, ALCops, al-runner from source). That is enough for `scripts/build.sh` and `scripts/test-dev.sh`. Docker and the BC Linux container are **not** part of that install — `scripts/bc-up.sh` needs `docker.io` plus ~4 GB RAM on top of the agent, and the default cloud image does not ship Docker.
 
 There is one shared BC container (web client `http://localhost:8080/`, `BCRUNNER` / `Admin123!`). Don't reset it while another agent is using it.
 

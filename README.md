@@ -24,6 +24,7 @@ All scripts are idempotent, set up `DOTNET_ROOT`/`PATH`, and stop on the first e
 |---|---|
 | `scripts/build.sh` | Fetches symbols and ALCops if missing, compiles `app`, copies it into `test/.alpackages`, compiles `test`. Code analysis is on; any warning fails the build (`STRICT=0` to allow warnings). |
 | `scripts/test-dev.sh` | Fast unit tests with al-runner (`/workspace/alrunner-bc29`), no container. Exits nonzero on failure. |
+| `scripts/cloud-agent-install.sh` | Idempotent CI-mirror bootstrap for Cursor Cloud Agents: .NET 8+10, AL compiler, BC 29 symbols, ALCops, al-runner from source. Used as `.cursor/environment.json` `install`. Does not start Docker or the BC container. |
 | `scripts/bc-up.sh` | Starts dockerd if needed, then the BC 29 container (`/workspace/MsDyn365Bc.On.Linux`) with the web client. Waits for healthy. If the test toolkit is broken, it recovers with `down -v` + `up`, which resets the database. |
 | `scripts/bc-down.sh` | Stops the containers and keeps the data. |
 | `scripts/bc-reset.sh` | Wipes the database (`down -v`) and starts fresh. |

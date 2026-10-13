@@ -8,3 +8,7 @@ rad.json
 *.g.xlf
 output/
 .analyzers/
+# Built locally / on Cloud Agents (CI puts al-runner next to the workspace)
+alrunner-bc29/
+# Optional BC Linux compose checkout used by scripts/bc-up.sh
+MsDyn365Bc.On.Linux/

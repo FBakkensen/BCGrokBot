@@ -30,8 +30,20 @@ All scripts are idempotent, set up `DOTNET_ROOT`/`PATH`, and stop on the first e
 | `scripts/publish.sh` | Builds, then publishes the main app to the dev endpoint (forcesync). |
 | `scripts/test-integration.sh` | Builds, publishes, and runs test codeunits 50150..50199 in the container. JUnit output goes to `output/junit.xml`. |
 | `scripts/setup-web-demo.sh` | Dev container only. Creates the non-SUPER web user SALESUSER1 / Sales123! and the salesperson-assignment demo data. |
+| `scripts/setup-project-demo.sh` | Dev container only. Recreates the BGB-P-* project hierarchy demo. |
+| `scripts/setup-project-version-demo.sh` | Dev container only. Ensures the BGB-V-* hierarchy has two archive runs, with project usage posted between them. |
 
 Web client: http://localhost:8080/ (BCRUNNER / Admin123!). Dev endpoint: http://localhost:7049/BC/dev.
+
+## Project version compare
+
+Flemming archives projects about once a month. **Archive Hierarchy** (Project Card and Project List, top-level projects only) runs the standard project archive for the top project and every subproject under one archive run. A normal single-project archive still works and gets its own run. Each archive also stores a snapshot: the 32 LCY figures from project statistics, profit and margin, parent project, level and hierarchy totals, plus per-task usage and invoiced cost and price split by Resource, Item and G/L Account. Budget and billable per type come from the archived planning lines. Archives taken before this extension have no snapshot; compare falls back to the project task archive totals and shows **No breakdown**.
+
+**Project Version Compare** sets version A against version B, or against **Current** (everything posted up to now, no date filter). Rows are tasks or the projects in the tree, plus a total. **Project Version Trend** is one row per run or version, oldest first, then current. The Excel report **Project Version Trend** is the same story as a workbook with pivot tables.
+
+### Recurring archive (job queue)
+
+The app does not create a job queue entry or a schedule. In the job queue, create an entry that runs codeunit **50112 "BGB Archive Hierarchies JQ"** (`BGB Archive Hierarchies JQ`). It archives every open top-level project and that project's subprojects, one archive run per top-level project. Each hierarchy is committed on its own. When one hierarchy fails, the remaining hierarchies still run, and the job queue entry then ends in error listing the projects that failed. Hierarchies archived earlier in that run stay archived. **Parameter String** is an optional filter on the project number, for example `BGB-V-*` or `BGB-V-TOP|BGB-V-OTHER`. Leave it blank to include every open top-level project. The job queue user needs permission set BCGrokBot and permission to archive projects.
 
 ## Code analysis
 - Microsoft: CodeCop, UICop, PerTenantExtensionCop. AppSourceCop is off because this is a PTE, not an AppSource app.

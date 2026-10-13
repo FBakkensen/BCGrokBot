@@ -306,6 +306,8 @@ codeunit 50163 "BGB Version Compare Int Tests"
         ProjectTestData.CreateTaskWithBillableLine(ChildJob, '100', 1, 10);
         ArchiveFailure.FailNextStore(ChildNo);
         BindSubscription(ArchiveFailure);
+        // The failed archive rolls the write transaction back to the last commit. Keep the projects.
+        Commit();
         // [WHEN] the hierarchy archive fails on the child, and the top project is then archived on its own
         asserterror ProjectArchiveMgt.ArchiveHierarchy(TopJob);
         ErrorText := GetLastErrorText();
@@ -330,6 +332,7 @@ codeunit 50163 "BGB Version Compare Int Tests"
     procedure FailedRenameDoesNotMoveSnapshotsWhenTheArchiveIsDeleted()
     var
         Job: Record Job;
+        LookupJob: Record Job;
         JobArchive: Record "Job Archive";
         Snapshot: Record "BGB Project Snapshot";
         ArchiveFailure: Codeunit "BGB Archive Failure";
@@ -347,12 +350,14 @@ codeunit 50163 "BGB Version Compare Int Tests"
         StoreProject(Job);
         ArchiveFailure.FailNextRename(ProjectNo);
         BindSubscription(ArchiveFailure);
+        // The failed rename rolls the write transaction back to the last commit. Keep the archived project.
+        Commit();
         // [WHEN] the rename fails after the rename flag is set, and the archive is then deleted
         asserterror Job.Rename(NewProjectNo);
         ErrorText := GetLastErrorText();
         UnbindSubscription(ArchiveFailure);
         Assert.IsTrue(StrPos(ErrorText, ProjectNo) > 0, ErrorText);
-        Job.Get(ProjectNo);
+        Assert.IsTrue(LookupJob.Get(ProjectNo), ErrorText);
         JobArchive.SetRange("No.", ProjectNo);
         JobArchive.FindFirst();
         JobArchive.Delete(true);
@@ -369,11 +374,13 @@ codeunit 50163 "BGB Version Compare Int Tests"
     procedure FailedDeleteDoesNotMarkTheNextArchive()
     var
         Job: Record Job;
+        LookupJob: Record Job;
         JobsSetup: Record "Jobs Setup";
         Snapshot: Record "BGB Project Snapshot";
         PreviousOption: Enum "Job Archive Option";
         CustomerNo: Code[20];
         ProjectNo: Code[20];
+        ErrorText: Text;
     begin
         // [SCENARIO] A delete that fails because ledger entries exist does not mark a later archive as during project delete
         JobsSetup.Get();
@@ -384,8 +391,13 @@ codeunit 50163 "BGB Version Compare Int Tests"
         ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 10);
         InsertLedger(ProjectNo, '100', "Job Journal Line Entry Type"::Usage, "Job Journal Line Type"::Resource, 5, 8);
         Job.SetHideValidationDialog(true);
+        // The failed delete rolls the write transaction back to the last commit. Keep the project and its ledger entries.
+        Commit();
         // [WHEN] the delete fails, and a status change then archives the project
         asserterror Job.Delete(true);
+        ErrorText := GetLastErrorText();
+        Assert.IsTrue(StrPos(ErrorText, 'ledger') > 0, ErrorText);
+        Assert.IsTrue(LookupJob.Get(ProjectNo), ErrorText);
         Job.Get(ProjectNo);
         JobsSetup.Get();
         JobsSetup."Archive Jobs" := JobsSetup."Archive Jobs"::Always;
@@ -474,7 +486,6 @@ codeunit 50163 "BGB Version Compare Int Tests"
         Top1: Code[20];
         Top2: Code[20];
         FailureText: Text;
-        RanOk: Boolean;
         EntriesBefore: Integer;
     begin
         // [SCENARIO] The job queue commits each hierarchy, logs a failure, and still fails the entry
@@ -489,14 +500,12 @@ codeunit 50163 "BGB Version Compare Int Tests"
         ArchiveFailure.FailNextStore(Top2);
         BindSubscription(ArchiveFailure);
         JobQueueEntry.Init();
-        JobQueueEntry."Parameter String" := Prefix + '*';
         EntriesBefore := JobQueueEntry.Count();
         // [WHEN] the second hierarchy fails
-        RanOk := Codeunit.Run(Codeunit::"BGB Archive Hierarchies JQ", JobQueueEntry);
+        asserterror ProjectArchiveMgt.ArchiveOpenTopLevelHierarchies(Prefix + '*');
         FailureText := GetLastErrorText();
         UnbindSubscription(ArchiveFailure);
         // [THEN] the first hierarchy stays archived, the second does not, and the error names the failed project
-        Assert.IsFalse(RanOk, 'job queue entry fails');
         Assert.IsTrue(StrPos(FailureText, Top2) > 0, FailureText);
         Assert.AreEqual(EntriesBefore, JobQueueEntry.Count(), 'job queue entries');
         Assert.AreEqual(1, CountRuns(Top1), 'first hierarchy committed');

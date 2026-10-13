@@ -7,7 +7,6 @@ using Microsoft.Projects.Project.Job;
 using Microsoft.Projects.Project.Journal;
 using Microsoft.Projects.Project.Ledger;
 using Microsoft.Projects.Project.Planning;
-using System.Telemetry;
 
 /// <summary>
 /// Archives a project hierarchy as one run and stores project and task snapshots for every archive,
@@ -27,28 +26,34 @@ codeunit 50109 "BGB Project Archive Mgt."
 
     var
         NotTopLevelErr: Label 'Project %1 has parent project %2. Archive Hierarchy can only be run on a top-level project.', Comment = '%1 = project number, %2 = parent project number';
-        ArchiveFailedErr: Label 'The hierarchy archive failed. %1', Comment = '%1 = error text';
         HierarchiesFailedErr: Label 'Could not archive these project hierarchies: %1', Comment = '%1 = project numbers and error texts';
         HierarchyFailedTok: Label '%1: %2', Comment = '%1 = project number, %2 = error text', Locked = true;
-        HierarchyFailedTelemetryTok: Label 'BGB Project Version', Locked = true;
         CouldNotArchiveTok: Label 'The hierarchy archive failed.', Locked = true;
 
     /// <summary>
     /// Archives the top-level project and all its descendants with StoreJob, under one archive run.
-    /// The store runs in Codeunit.Run. On failure the archives are rolled back and the in-memory run is cleared.
+    /// The job queue runs each hierarchy with Codeunit.Run. A failed run is not reused: the run header is gone after rollback.
     /// </summary>
     /// <param name="Job">The top-level project. Its parent project number must be blank.</param>
     procedure ArchiveHierarchy(var Job: Record Job)
     var
-        Failure: Text;
+        ArchiveRunContext: Codeunit "BGB Archive Run Context";
     begin
-        if not TryArchiveHierarchy(Job, Failure) then
-            Error(ArchiveFailedErr, Failure);
+        if Job."BGB Parent Project No." <> '' then
+            Error(NotTopLevelErr, Job."No.", Job."BGB Parent Project No.");
+        // A failure rolls the database back but not this state. InsideHierarchyStore ignores a run whose header is gone.
+        ArchiveRunContext.ClearRunState();
+        ArchiveRunContext.ClearAnalysis();
+        ArchiveRunContext.BeginRun(CreateGuid(), CurrentDateTime(), Job."No.", true);
+        ArchiveRunContext.SetInsideHierarchy(true);
+        StoreActiveHierarchy();
+        ArchiveRunContext.ClearRunState();
+        ArchiveRunContext.ClearAnalysis();
     end;
 
     /// <summary>
     /// Archives every open top-level project (and its descendants) as its own run.
-    /// Each hierarchy is committed on its own. A failure is logged and the next hierarchy still runs.
+    /// Each hierarchy is committed on its own. A failure is remembered and the next hierarchy still runs.
     /// When any hierarchy failed, an error lists them so the job queue entry shows the failure.
     /// </summary>
     /// <param name="ProjectNoFilter">Optional filter on the project number, for example 'BGB-V-*'. Blank includes every open top-level project.</param>
@@ -61,13 +66,13 @@ codeunit 50109 "BGB Project Archive Mgt."
     begin
         foreach ProjectNo in GetOpenTopLevelProjectNos(ProjectNoFilter) do begin
             Job.Get(ProjectNo);
+            // Codeunit.Run stops the transaction when a write is already open, so commit before each hierarchy.
+            Commit();
             if TryArchiveHierarchy(Job, Failure) then
-                // Keep this hierarchy when a later one fails. SingleInstance state is already cleared.
+                // Keep this hierarchy when a later one fails.
                 Commit()
-            else begin
-                LogHierarchyFailure(ProjectNo, Failure);
+            else
                 AppendFailure(Failed, ProjectNo, Failure);
-            end;
         end;
         if Failed.Length() > 0 then
             Error(HierarchiesFailedErr, Failed.ToText());
@@ -144,17 +149,19 @@ codeunit 50109 "BGB Project Archive Mgt."
         if Job."BGB Parent Project No." <> '' then
             Error(NotTopLevelErr, Job."No.", Job."BGB Parent Project No.");
         // Codeunit.Run rolls the hierarchy's writes back when it fails. SingleInstance state is not rolled back, so clear it on both paths.
-        ArchiveRunContext.Reset();
+        // Drop the cached analysis before the run. A temporary-record write after Codeunit.Run stops the transaction.
+        ArchiveRunContext.ClearRunState();
+        ArchiveRunContext.ClearAnalysis();
         ArchiveRunContext.BeginRun(CreateGuid(), CurrentDateTime(), Job."No.", true);
         ArchiveRunContext.SetInsideHierarchy(true);
-        Started := Codeunit.Run(Codeunit::"BGB Hierarchy Archive");
+        Started := Codeunit.Run(Codeunit::"BGB Hierarchy Archive", Job);
         if not Started then begin
             Failure := GetLastErrorText();
             if Failure = '' then
                 Failure := CouldNotArchiveTok;
         end else
             Clear(Failure);
-        ArchiveRunContext.Reset();
+        ArchiveRunContext.ClearRunState();
         exit(Started);
     end;
 
@@ -163,11 +170,6 @@ codeunit 50109 "BGB Project Archive Mgt."
         if Failed.Length() > 0 then
             Failed.Append(' ');
         Failed.Append(StrSubstNo(HierarchyFailedTok, ProjectNo, Failure));
-    end;
-
-    local procedure LogHierarchyFailure(ProjectNo: Code[20]; Failure: Text)
-    begin
-        Session.LogMessage('BGB0014', StrSubstNo(HierarchyFailedTok, ProjectNo, Failure), Verbosity::Error, DataClassification::CustomerContent, TelemetryScope::ExtensionPublisher, 'Category', HierarchyFailedTelemetryTok);
     end;
 
     /// <summary>

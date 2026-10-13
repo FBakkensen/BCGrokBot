@@ -2,7 +2,7 @@
 
 Archive Hierarchy, on a top-level project, stores the project and every subproject with the standard project archive under one archive run. A single-project archive still gets its own run. OnAfterStoreJob writes a project snapshot (32 LCY statistics figures, profit and margin, parent, level, hierarchy totals, run id, user, time) and a task snapshot with usage and invoiced cost and price split by Resource, Item and G/L, plus budget and billable per type from the archived planning lines. Snapshots follow project archive delete and rename. A snapshot taken while the project is being deleted is marked, because usage may already be incomplete. Archives without a snapshot compare from the project task archive totals and are flagged no breakdown. Current means everything posted up to now, with no date filter.
 
-Codeunit 50112 "BGB Archive Hierarchies JQ" is for the job queue. Parameter String is an optional project-number filter. It does not create a job queue entry. Each hierarchy is committed separately. A failed hierarchy is logged, later hierarchies still run, and the entry then fails with the list of projects that failed.
+Codeunit 50112 "BGB Archive Hierarchies JQ" is for the job queue. Parameter String is an optional project-number filter. It does not create a job queue entry. Each hierarchy is committed separately. A failed hierarchy does not roll back the ones already stored. Later hierarchies still run, and the entry then fails with the list of projects that failed.
 
 ## Sub-features
 

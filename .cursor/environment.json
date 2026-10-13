@@ -1,0 +1,4 @@
+{
+  "name": "BCGrokBot",
+  "install": "bash scripts/cloud-agent-install.sh"
+}

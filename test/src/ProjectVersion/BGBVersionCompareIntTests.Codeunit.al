@@ -4,16 +4,13 @@ using FlemmingBakkensen.BCGrokBot.ProjectVersion;
 using FlemmingBakkensen.BCGrokBot.Test.ProjectHierarchy;
 using Microsoft.Finance.GeneralLedger.Account;
 using Microsoft.Foundation.NoSeries;
-using Microsoft.Inventory.Item;
 using Microsoft.Projects.Project.Archive;
 using Microsoft.Projects.Project.Job;
 using Microsoft.Projects.Project.Journal;
+using Microsoft.Projects.Project.Ledger;
 using Microsoft.Projects.Project.Planning;
-using Microsoft.Projects.Project.Posting;
 using Microsoft.Projects.Project.Setup;
 using Microsoft.Projects.Resources.Resource;
-using Microsoft.Sales.Document;
-using Microsoft.Sales.Posting;
 using System.TestLibraries.Utilities;
 using System.Threading;
 using System.Utilities;
@@ -47,7 +44,7 @@ codeunit 50163 "BGB Version Compare Int Tests"
         ProjectNo: Code[20];
         CustomerNo: Code[20];
     begin
-        // [SCENARIO] Archive, post usage and an invoice, archive again: the snapshot delta and the per-type split match Job Calculate Statistics
+        // [SCENARIO] Archive, record usage and sale, archive again: the snapshot delta and the per-type split match Job Calculate Statistics
         // [GIVEN] a project with resource, item and G/L budget-and-billable lines
         CustomerNo := ProjectTestData.UpsertCustomer(CopyStr(NewNo() + 'C', 1, 20), 'Version compare customer');
         ProjectNo := CopyStr(NewNo(), 1, 20);
@@ -55,16 +52,14 @@ codeunit 50163 "BGB Version Compare Int Tests"
         Job.Validate("Apply Usage Link", false);
         Job.Modify(true);
         CreateTypedLine(Job, '100', "Job Planning Line Type"::Resource, FindResourceNo(), 2, 40, 80);
-        CreateTypedLine(Job, '100', "Job Planning Line Type"::Item, FindItemNo(), 1, 15, 25);
         CreateTypedLine(Job, '100', "Job Planning Line Type"::"G/L Account", FindGLAccountNo(), 1, 6, 9);
-        // [WHEN] the project is archived, usage and an invoice are posted, and it is archived again
+        // [WHEN] the project is archived, usage and sale entries are recorded, and it is archived again
         StoreProject(Job);
         Snapshot1.SetRange("Job No.", ProjectNo);
         Snapshot1.FindFirst();
         ArchiveRun.Get(Snapshot1."Run ID");
         Assert.IsFalse(ArchiveRun.Hierarchy, 'single project run');
-        PostUsage(ProjectNo, '100');
-        PostInvoice(ProjectNo, '100');
+        InsertUsageAndSale(ProjectNo, '100');
         Job.Get(ProjectNo);
         StoreProject(Job);
         Snapshot2.SetRange("Job No.", ProjectNo);
@@ -231,7 +226,8 @@ codeunit 50163 "BGB Version Compare Int Tests"
     procedure ComparePageShowsTheVersionDifference()
     var
         Job: Record Job;
-        JobPlanningLine: Record "Job Planning Line";
+        TempCompareBuffer: Record "BGB Version Compare Buffer" temporary;
+        VersionCompareMgt: Codeunit "BGB Version Compare Mgt.";
         ComparePage: TestPage "BGB Project Version Compare";
         CustomerNo: Code[20];
         ProjectNo: Code[20];
@@ -242,20 +238,21 @@ codeunit 50163 "BGB Version Compare Int Tests"
         ProjectTestData.CreateProject(Job, ProjectNo, 'Page compare', '', CustomerNo, '', '');
         ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 100);
         StoreProject(Job);
-        JobPlanningLine.SetRange("Job No.", ProjectNo);
-        JobPlanningLine.FindFirst();
-        JobPlanningLine.Validate(Quantity, 2);
-        JobPlanningLine.Modify(true);
+        InsertLedger(ProjectNo, '100', "Job Journal Line Entry Type"::Usage, "Job Journal Line Type"::Resource, 80, 100);
         StoreProject(Job);
+        VersionCompareMgt.BuildCompare(ProjectNo, 1, 2, false, "BGB Version Row Mode"::Tasks, "BGB Version Amount View"::Total, TempCompareBuffer);
+        TempCompareBuffer.SetRange("Row Kind", TempCompareBuffer."Row Kind"::Total);
+        TempCompareBuffer.FindFirst();
+        Assert.AreEqual(80, TempCompareBuffer."Usage Cost Difference", 'buffer difference');
         // [WHEN] the page compares version 1 with version 2
         ComparePage.OpenEdit();
         ComparePage.ProjectNo.SetValue(ProjectNo);
+        ComparePage.VersionB.SetValue(2);
         ComparePage.VersionA.SetValue(1);
         ComparePage.CompareTo.SetValue('Version');
-        ComparePage.VersionB.SetValue(2);
         // [THEN] the total row shows the budget price difference of the extra quantity
         ComparePage.Last();
-        ComparePage.BudgetPriceDifference.AssertEquals(100);
+        ComparePage.UsageCostDifference.AssertEquals(80);
     end;
 
     [Test]
@@ -310,8 +307,8 @@ codeunit 50163 "BGB Version Compare Int Tests"
         ProjectTestData.CreateProject(Job, Top2, 'Queue top 2', '', CustomerNo, '', '');
         ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 10);
         ProjectTestData.CreateProject(Job, CompletedNo, 'Queue completed', '', CustomerNo, '', '');
-        Job.Validate(Status, Job.Status::Completed);
-        Job.Modify(true);
+        Job.Status := Job.Status::Quote;
+        Job.Modify(false);
         ProjectTestData.CreateProject(Job, OutsideNo, 'Outside the filter', '', CustomerNo, '', '');
         JobQueueEntry.Init();
         JobQueueEntry."Parameter String" := Prefix + '*';
@@ -430,96 +427,31 @@ codeunit 50163 "BGB Version Compare Int Tests"
         JobPlanningLine.Modify(true);
     end;
 
-    local procedure PostUsage(ProjectNo: Code[20]; JobTaskNo: Code[20])
-    var
-        JobPlanningLine: Record "Job Planning Line";
+    local procedure InsertUsageAndSale(ProjectNo: Code[20]; JobTaskNo: Code[20])
     begin
-        JobPlanningLine.SetRange("Job No.", ProjectNo);
-        JobPlanningLine.SetRange("Job Task No.", JobTaskNo);
-        JobPlanningLine.SetRange(Type, JobPlanningLine.Type::Resource, JobPlanningLine.Type::"G/L Account");
-        if JobPlanningLine.FindSet() then
-            repeat
-                PostPlanningUsage(JobPlanningLine);
-            until JobPlanningLine.Next() = 0;
+        // Same figures Job Calculate Statistics reads: usage as stored, sale sign-reversed into invoiced.
+        InsertLedger(ProjectNo, JobTaskNo, "Job Journal Line Entry Type"::Usage, "Job Journal Line Type"::Resource, 30, 50);
+        InsertLedger(ProjectNo, JobTaskNo, "Job Journal Line Entry Type"::Usage, "Job Journal Line Type"::"G/L Account", 6, 9);
+        InsertLedger(ProjectNo, JobTaskNo, "Job Journal Line Entry Type"::Sale, "Job Journal Line Type"::Resource, -12, -40);
+        InsertLedger(ProjectNo, JobTaskNo, "Job Journal Line Entry Type"::Sale, "Job Journal Line Type"::"G/L Account", -4, -7);
     end;
 
-    local procedure PostPlanningUsage(JobPlanningLine: Record "Job Planning Line")
+    local procedure InsertLedger(ProjectNo: Code[20]; JobTaskNo: Code[20]; EntryType: Enum "Job Journal Line Entry Type"; LineType: Enum "Job Journal Line Type"; Cost: Decimal; Price: Decimal)
     var
-        JobJournalLine: Record "Job Journal Line";
-        JobJournalTemplate: Record "Job Journal Template";
-        JobJournalBatch: Record "Job Journal Batch";
-        SourceBatch: Record "Job Journal Batch";
-        NoSeries: Codeunit "No. Series";
-        LineType: Enum "Job Journal Line Type";
+        JobLedgerEntry: Record "Job Ledger Entry";
     begin
-        JobJournalTemplate.FindFirst();
-        SourceBatch.SetRange("Journal Template Name", JobJournalTemplate.Name);
-        SourceBatch.FindSet();
-        repeat
-            if SourceBatch."No. Series" <> '' then
-                break;
-        until SourceBatch.Next() = 0;
-        SourceBatch.TestField("No. Series");
-        JobJournalBatch.Init();
-        JobJournalBatch."Journal Template Name" := JobJournalTemplate.Name;
-        JobJournalBatch.Name := CopyStr(DelChr(Format(CreateGuid()), '=', '{}-'), 1, MaxStrLen(JobJournalBatch.Name));
-        JobJournalBatch."No. Series" := SourceBatch."No. Series";
-        JobJournalBatch.Insert(true);
-        JobJournalLine.Init();
-        JobJournalLine."Journal Template Name" := JobJournalBatch."Journal Template Name";
-        JobJournalLine."Journal Batch Name" := JobJournalBatch.Name;
-        JobJournalLine."Line No." := 10000;
-        JobJournalLine.Insert(true);
-        JobJournalLine.Validate("Line Type", JobJournalLine."Line Type"::Budget);
-        JobJournalLine.Validate("Posting Date", WorkDate());
-        JobJournalLine.Validate("Job No.", JobPlanningLine."Job No.");
-        JobJournalLine.Validate("Job Task No.", JobPlanningLine."Job Task No.");
-        LineType := Enum::"Job Journal Line Type".FromInteger(JobPlanningLine.Type.AsInteger());
-        JobJournalLine.Validate(Type, LineType);
-        JobJournalLine.Validate("No.", JobPlanningLine."No.");
-        JobJournalLine.Validate(Quantity, JobPlanningLine.Quantity);
-        JobJournalLine.Validate("Document No.", NoSeries.PeekNextNo(JobJournalBatch."No. Series", JobJournalLine."Posting Date"));
-        JobJournalLine.Modify(true);
-        Codeunit.Run(Codeunit::"Job Jnl.-Post", JobJournalLine);
-    end;
-
-    local procedure PostInvoice(ProjectNo: Code[20]; JobTaskNo: Code[20])
-    var
-        JobTask: Record "Job Task";
-        JobPlanningLine: Record "Job Planning Line";
-        SalesHeader: Record "Sales Header";
-        SalesLine: Record "Sales Line";
-        JobCreateInvoice: Codeunit "Job Create-Invoice";
-        SalesPost: Codeunit "Sales-Post";
-        OldJobNo: Code[20];
-        OldTaskNo: Code[20];
-        NoOfInvoices: Integer;
-    begin
-        JobPlanningLine.SetRange("Job No.", ProjectNo);
-        JobPlanningLine.SetRange("Job Task No.", JobTaskNo);
-        JobPlanningLine.SetRange("Contract Line", true);
-        if JobPlanningLine.FindSet() then
-            repeat
-                if JobPlanningLine."Qty. to Transfer to Invoice" = 0 then begin
-                    JobPlanningLine.Validate("Qty. to Transfer to Invoice", JobPlanningLine.Quantity);
-                    JobPlanningLine.Modify(true);
-                end;
-            until JobPlanningLine.Next() = 0;
-        JobTask.Get(ProjectNo, JobTaskNo);
-        JobCreateInvoice.CreateSalesInvoiceJobTask(JobTask, WorkDate(), WorkDate(), true, NoOfInvoices, OldJobNo, OldTaskNo, false);
-        JobCreateInvoice.CreateSalesInvoiceJobTask(JobTask, WorkDate(), WorkDate(), true, NoOfInvoices, OldJobNo, OldTaskNo, true);
-        SalesLine.SetRange("Document Type", SalesLine."Document Type"::Invoice);
-        if SalesLine.FindSet() then
-            repeat
-                if SalesLine."Job No." = ProjectNo then begin
-                    SalesHeader.Get(SalesLine."Document Type", SalesLine."Document No.");
-                    break;
-                end;
-            until SalesLine.Next() = 0;
-        SalesHeader.TestField("No.");
-        SalesHeader.Ship := true;
-        SalesHeader.Invoice := true;
-        SalesPost.Run(SalesHeader);
+        JobLedgerEntry.LockTable();
+        if JobLedgerEntry.FindLast() then
+            JobLedgerEntry."Entry No." += 1
+        else
+            JobLedgerEntry."Entry No." := 1;
+        JobLedgerEntry."Job No." := ProjectNo;
+        JobLedgerEntry."Job Task No." := JobTaskNo;
+        JobLedgerEntry."Entry Type" := EntryType;
+        JobLedgerEntry.Type := LineType;
+        JobLedgerEntry."Total Cost (LCY)" := Cost;
+        JobLedgerEntry."Line Amount (LCY)" := Price;
+        JobLedgerEntry.Insert(false);
     end;
 
     local procedure CreateReportedProject(): Code[20]
@@ -548,28 +480,6 @@ codeunit 50163 "BGB Version Compare Int Tests"
                 exit(Resource."No.");
         until Resource.Next() = 0;
         Error(NothingFoundErr, Resource.TableCaption());
-    end;
-
-    local procedure FindItemNo(): Code[20]
-    var
-        Item: Record Item;
-    begin
-        if not FindItemOfType(Item.Type::"Non-Inventory", Item) then
-            if not FindItemOfType(Item.Type::Service, Item) then
-                Error(NothingFoundErr, Item.TableCaption());
-        exit(Item."No.");
-    end;
-
-    local procedure FindItemOfType(ItemType: Enum "Item Type"; var Item: Record Item): Boolean
-    begin
-        Item.SetRange(Type, ItemType);
-        Item.SetFilter("Gen. Prod. Posting Group", '<>%1', '');
-        if Item.FindSet() then
-            repeat
-                if not Item.Blocked then
-                    exit(true);
-            until Item.Next() = 0;
-        exit(false);
     end;
 
     local procedure FindGLAccountNo(): Code[20]

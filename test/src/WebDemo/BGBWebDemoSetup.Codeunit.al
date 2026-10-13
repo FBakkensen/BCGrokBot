@@ -5,7 +5,6 @@ using FlemmingBakkensen.BCGrokBot.ProjectHierarchy;
 using FlemmingBakkensen.BCGrokBot.ProjectVersion;
 using FlemmingBakkensen.BCGrokBot.Test.ProjectHierarchy;
 using Microsoft.CRM.Team;
-using Microsoft.Foundation.NoSeries;
 using Microsoft.Projects.Project.Job;
 using Microsoft.Projects.Project.Journal;
 using Microsoft.Projects.Project.Ledger;
@@ -26,7 +25,7 @@ codeunit 50153 "BGB Web Demo Setup"
     Access = Public;
     Permissions = tabledata Customer = rim,
                   tabledata Job = rmd,
-                  tabledata "Job Journal Batch" = ri,
+                  tabledata "Job Journal Batch" = i,
                   tabledata "Job Journal Line" = im,
                   tabledata "Job Journal Template" = r,
                   tabledata "Job Ledger Entry" = r,
@@ -294,25 +293,16 @@ codeunit 50153 "BGB Web Demo Setup"
         JobJournalLine: Record "Job Journal Line";
         JobJournalTemplate: Record "Job Journal Template";
         JobJournalBatch: Record "Job Journal Batch";
-        SourceBatch: Record "Job Journal Batch";
-        NoSeries: Codeunit "No. Series";
     begin
         JobPlanningLine.SetRange("Job No.", VerTopTok);
         JobPlanningLine.SetRange("Job Task No.", '100');
         JobPlanningLine.SetRange(Type, JobPlanningLine.Type::Resource);
         JobPlanningLine.FindFirst();
+        JobJournalTemplate.SetRange(Recurring, false);
         JobJournalTemplate.FindFirst();
-        SourceBatch.SetRange("Journal Template Name", JobJournalTemplate.Name);
-        SourceBatch.FindSet();
-        repeat
-            if SourceBatch."No. Series" <> '' then
-                break;
-        until SourceBatch.Next() = 0;
-        SourceBatch.TestField("No. Series");
         JobJournalBatch.Init();
         JobJournalBatch."Journal Template Name" := JobJournalTemplate.Name;
         JobJournalBatch.Name := CopyStr('V' + DelChr(Format(CreateGuid()), '=', '{}-'), 1, MaxStrLen(JobJournalBatch.Name));
-        JobJournalBatch."No. Series" := SourceBatch."No. Series";
         JobJournalBatch.Insert(true);
         JobJournalLine.Init();
         JobJournalLine."Journal Template Name" := JobJournalBatch."Journal Template Name";
@@ -326,8 +316,10 @@ codeunit 50153 "BGB Web Demo Setup"
         JobJournalLine.Validate(Type, JobJournalLine.Type::Resource);
         JobJournalLine.Validate("No.", JobPlanningLine."No.");
         JobJournalLine.Validate(Quantity, JobPlanningLine.Quantity);
-        JobJournalLine.Validate("Document No.", NoSeries.PeekNextNo(JobJournalBatch."No. Series", JobJournalLine."Posting Date"));
+        JobJournalLine."Document No." := CopyStr('V' + DelChr(Format(CreateGuid()), '=', '{}-'), 1, MaxStrLen(JobJournalLine."Document No."));
         JobJournalLine.Modify(true);
-        Codeunit.Run(Codeunit::"Job Jnl.-Post", JobJournalLine);
+        JobJournalLine.SetRange("Journal Template Name", JobJournalLine."Journal Template Name");
+        JobJournalLine.SetRange("Journal Batch Name", JobJournalLine."Journal Batch Name");
+        Codeunit.Run(Codeunit::"Job Jnl.-Post Line", JobJournalLine);
     end;
 }

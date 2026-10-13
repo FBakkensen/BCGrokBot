@@ -71,7 +71,6 @@ page 50103 "BGB Project Version Compare"
                     Caption = 'Version B';
                     ToolTip = 'Specifies the archive version on side B.';
                     BlankZero = true;
-                    Enabled = CompareToVersion;
 
                     trigger OnValidate()
                     begin

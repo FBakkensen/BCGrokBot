@@ -14,11 +14,11 @@ codeunit 50110 "BGB Archive Run Context"
         ActiveRunAt: DateTime;
         ActiveTopProjectNo: Code[20];
         ActiveHierarchy: Boolean;
-        RunActive: Boolean;
         DeletingJobNo: Code[20];
         RenameFromNo: Code[20];
         RenameToNo: Code[20];
         RenameActive: Boolean;
+        InsideHierarchy: Boolean;
 
     /// <summary>
     /// Starts an archive run. Later StoreJob calls reuse it until EndRun.
@@ -33,7 +33,15 @@ codeunit 50110 "BGB Archive Run Context"
         ActiveRunAt := NewRunAt;
         ActiveTopProjectNo := NewTopProjectNo;
         ActiveHierarchy := Hierarchy;
-        RunActive := true;
+    end;
+
+    /// <summary>
+    /// Clears a run left active by a failed archive, including the hierarchy flag.
+    /// </summary>
+    procedure Reset()
+    begin
+        EndRun();
+        InsideHierarchy := false;
     end;
 
     /// <summary>
@@ -45,16 +53,6 @@ codeunit 50110 "BGB Archive Run Context"
         Clear(ActiveRunAt);
         Clear(ActiveTopProjectNo);
         ActiveHierarchy := false;
-        RunActive := false;
-    end;
-
-    /// <summary>
-    /// Returns whether an archive run is active.
-    /// </summary>
-    /// <returns>True when BeginRun was called and EndRun has not.</returns>
-    procedure HasActiveRun(): Boolean
-    begin
-        exit(RunActive);
     end;
 
     /// <summary>
@@ -91,6 +89,24 @@ codeunit 50110 "BGB Archive Run Context"
     procedure IsHierarchy(): Boolean
     begin
         exit(ActiveHierarchy);
+    end;
+
+    /// <summary>
+    /// Marks that StoreJob calls are part of the hierarchy archive currently in progress.
+    /// </summary>
+    /// <param name="Inside">True while the hierarchy archive is storing projects.</param>
+    procedure SetInsideHierarchy(Inside: Boolean)
+    begin
+        InsideHierarchy := Inside;
+    end;
+
+    /// <summary>
+    /// Returns whether the current StoreJob is part of a hierarchy archive.
+    /// </summary>
+    /// <returns>True while a hierarchy archive is storing projects.</returns>
+    procedure InsideHierarchyStore(): Boolean
+    begin
+        exit(InsideHierarchy);
     end;
 
     /// <summary>

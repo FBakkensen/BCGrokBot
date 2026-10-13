@@ -7,7 +7,7 @@ Codeunit 50112 "BGB Archive Hierarchies JQ" is for the job queue. Parameter Stri
 ## Sub-features
 
 - `pv-unit`: al-runner codeunit 50162 (difference and percent including a zero base, run grouping, fallback, trend order, per-type split, top-level selection, snapshot move and delete).
-- `pv-container`: codeunit 50163 (archive, post usage and invoice, archive again and match statistics; one hierarchy run over five projects; auto-archive when Jobs Setup is Always; delete and rename; compare page; xlsx report; job queue).
+- `pv-container`: codeunit 50163 (archive, record usage and sale, archive again and match statistics per type; one hierarchy run over five projects; auto-archive when Jobs Setup is Always; delete and rename; compare page; xlsx report; job queue). The demo script posts a real resource journal between the two runs.
 - `pv-web`: after `scripts/setup-project-version-demo.sh`, project BGB-V-TOP has two archive runs and posted usage between them. Project Version Compare and Project Version Trend show the two versions and current.
 
 ## How to get to it (user POV)

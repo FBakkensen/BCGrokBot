@@ -26,7 +26,6 @@ codeunit 50109 "BGB Project Archive Mgt."
 
     var
         NotTopLevelErr: Label 'Project %1 has parent project %2. Archive Hierarchy can only be run on a top-level project.', Comment = '%1 = project number, %2 = parent project number';
-        ArchiveFailedErr: Label 'The project could not be archived. %1', Comment = '%1 = error text';
 
     /// <summary>
     /// Archives the top-level project and all its descendants with StoreJob, under one archive run.
@@ -38,12 +37,11 @@ codeunit 50109 "BGB Project Archive Mgt."
     begin
         if Job."BGB Parent Project No." <> '' then
             Error(NotTopLevelErr, Job."No.", Job."BGB Parent Project No.");
+        ArchiveRunContext.Reset();
         ArchiveRunContext.BeginRun(CreateGuid(), CurrentDateTime(), Job."No.", true);
-        if not TryStoreDescendants(Job."No.") then begin
-            ArchiveRunContext.EndRun();
-            Error(ArchiveFailedErr, GetLastErrorText());
-        end;
-        ArchiveRunContext.EndRun();
+        ArchiveRunContext.SetInsideHierarchy(true);
+        StoreActiveHierarchy();
+        ArchiveRunContext.Reset();
     end;
 
     /// <summary>
@@ -84,6 +82,23 @@ codeunit 50109 "BGB Project Archive Mgt."
     end;
 
     /// <summary>
+    /// Stores every project in the active hierarchy run.
+    /// </summary>
+    procedure StoreActiveHierarchy()
+    var
+        Job: Record Job;
+        ArchiveRunContext: Codeunit "BGB Archive Run Context";
+        ProjectHierarchyMgt: Codeunit "BGB Project Hierarchy Mgt.";
+        JobArchiveManagement: Codeunit "Job Archive Management";
+        ProjectNo: Code[20];
+    begin
+        foreach ProjectNo in ProjectHierarchyMgt.GetProjectAndDescendants(ArchiveRunContext.TopProjectNo()) do begin
+            Job.Get(ProjectNo);
+            JobArchiveManagement.StoreJob(Job, false);
+        end;
+    end;
+
+    /// <summary>
     /// Writes the project and task snapshots for an archive version. Called from OnAfterStoreJob for every archive path.
     /// A snapshot taken outside an active hierarchy run starts its own run.
     /// </summary>
@@ -92,18 +107,15 @@ codeunit 50109 "BGB Project Archive Mgt."
     procedure CaptureSnapshot(Job: Record Job; JobArchive: Record "Job Archive")
     var
         ArchiveRunContext: Codeunit "BGB Archive Run Context";
-        StartedRun: Boolean;
     begin
-        StartedRun := not ArchiveRunContext.HasActiveRun();
-        if StartedRun then
-            ArchiveRunContext.BeginRun(CreateGuid(), CurrentDateTime(), Job."No.", false);
-        if not TryDoCapture(Job, JobArchive) then begin
-            if StartedRun then
-                ArchiveRunContext.EndRun();
-            Error(ArchiveFailedErr, GetLastErrorText());
+        if ArchiveRunContext.InsideHierarchyStore() then begin
+            DoCapture(Job, JobArchive);
+            exit;
         end;
-        if StartedRun then
-            ArchiveRunContext.EndRun();
+        ArchiveRunContext.Reset();
+        ArchiveRunContext.BeginRun(CreateGuid(), CurrentDateTime(), Job."No.", false);
+        DoCapture(Job, JobArchive);
+        ArchiveRunContext.EndRun();
     end;
 
     /// <summary>
@@ -261,26 +273,6 @@ codeunit 50109 "BGB Project Archive Mgt."
             exit;
         if ArchiveRun.Get(RunId) then
             ArchiveRun.Delete(false);
-    end;
-
-    [TryFunction]
-    local procedure TryStoreDescendants(TopProjectNo: Code[20])
-    var
-        Job: Record Job;
-        ProjectHierarchyMgt: Codeunit "BGB Project Hierarchy Mgt.";
-        JobArchiveManagement: Codeunit "Job Archive Management";
-        ProjectNo: Code[20];
-    begin
-        foreach ProjectNo in ProjectHierarchyMgt.GetProjectAndDescendants(TopProjectNo) do begin
-            Job.Get(ProjectNo);
-            JobArchiveManagement.StoreJob(Job, false);
-        end;
-    end;
-
-    [TryFunction]
-    local procedure TryDoCapture(Job: Record Job; JobArchive: Record "Job Archive")
-    begin
-        DoCapture(Job, JobArchive);
     end;
 
     local procedure DoCapture(Job: Record Job; JobArchive: Record "Job Archive")

@@ -25,6 +25,7 @@ permissionset 50100 "BCGrokBot"
                   table "BGB Version Trend Buffer" = X,
                   codeunit "BGB Archive Hierarchies JQ" = X,
                   codeunit "BGB Archive Run Context" = X,
+                  codeunit "BGB Hierarchy Archive" = X,
                   codeunit "BGB Hierarchy Inv. Binding" = X,
                   codeunit "BGB Hierarchy Invoicing" = X,
                   codeunit "BGB Project Analysis Mgt." = X,

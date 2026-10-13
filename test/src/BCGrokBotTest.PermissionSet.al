@@ -16,7 +16,8 @@ permissionset 50150 "BCGrokBot.Test"
     Caption = 'BCGrokBot.Test', MaxLength = 30;
     Assignable = true;
     IncludedPermissionSets = "BCGrokBot";
-    Permissions = codeunit "BGB Hierarchy Invoicing Tests" = X,
+    Permissions = codeunit "BGB Archive Failure" = X,
+                  codeunit "BGB Hierarchy Invoicing Tests" = X,
                   codeunit "BGB Project Analysis Int Tests" = X,
                   codeunit "BGB Version Compare Int Tests" = X,
                   codeunit "BGB Version Compare Tests" = X,

@@ -7,6 +7,7 @@ using Microsoft.Projects.Project.Job;
 using Microsoft.Projects.Project.Journal;
 using Microsoft.Projects.Project.Ledger;
 using Microsoft.Projects.Project.Planning;
+using System.Telemetry;
 
 /// <summary>
 /// Archives a project hierarchy as one run and stores project and task snapshots for every archive,
@@ -26,37 +27,71 @@ codeunit 50109 "BGB Project Archive Mgt."
 
     var
         NotTopLevelErr: Label 'Project %1 has parent project %2. Archive Hierarchy can only be run on a top-level project.', Comment = '%1 = project number, %2 = parent project number';
+        ArchiveFailedErr: Label 'The hierarchy archive failed. %1', Comment = '%1 = error text';
+        HierarchiesFailedErr: Label 'Could not archive these project hierarchies: %1', Comment = '%1 = project numbers and error texts';
+        HierarchyFailedTok: Label '%1: %2', Comment = '%1 = project number, %2 = error text', Locked = true;
+        HierarchyFailedTelemetryTok: Label 'BGB Project Version', Locked = true;
+        CouldNotArchiveTok: Label 'The hierarchy archive failed.', Locked = true;
 
     /// <summary>
     /// Archives the top-level project and all its descendants with StoreJob, under one archive run.
+    /// The store runs in Codeunit.Run. On failure the archives are rolled back and the in-memory run is cleared.
     /// </summary>
     /// <param name="Job">The top-level project. Its parent project number must be blank.</param>
     procedure ArchiveHierarchy(var Job: Record Job)
     var
-        ArchiveRunContext: Codeunit "BGB Archive Run Context";
+        Failure: Text;
     begin
-        if Job."BGB Parent Project No." <> '' then
-            Error(NotTopLevelErr, Job."No.", Job."BGB Parent Project No.");
-        ArchiveRunContext.Reset();
-        ArchiveRunContext.BeginRun(CreateGuid(), CurrentDateTime(), Job."No.", true);
-        ArchiveRunContext.SetInsideHierarchy(true);
-        StoreActiveHierarchy();
-        ArchiveRunContext.Reset();
+        if not TryArchiveHierarchy(Job, Failure) then
+            Error(ArchiveFailedErr, Failure);
     end;
 
     /// <summary>
     /// Archives every open top-level project (and its descendants) as its own run.
+    /// Each hierarchy is committed on its own. A failure is logged and the next hierarchy still runs.
+    /// When any hierarchy failed, an error lists them so the job queue entry shows the failure.
     /// </summary>
     /// <param name="ProjectNoFilter">Optional filter on the project number, for example 'BGB-V-*'. Blank includes every open top-level project.</param>
     procedure ArchiveOpenTopLevelHierarchies(ProjectNoFilter: Text)
     var
         Job: Record Job;
         ProjectNo: Code[20];
+        Failure: Text;
+        Failed: TextBuilder;
     begin
         foreach ProjectNo in GetOpenTopLevelProjectNos(ProjectNoFilter) do begin
             Job.Get(ProjectNo);
-            ArchiveHierarchy(Job);
+            if TryArchiveHierarchy(Job, Failure) then
+                // Keep this hierarchy when a later one fails. SingleInstance state is already cleared.
+                Commit()
+            else begin
+                LogHierarchyFailure(ProjectNo, Failure);
+                AppendFailure(Failed, ProjectNo, Failure);
+            end;
         end;
+        if Failed.Length() > 0 then
+            Error(HierarchiesFailedErr, Failed.ToText());
+    end;
+
+    /// <summary>
+    /// Returns how many times this session has built the tree analysis while writing snapshots.
+    /// </summary>
+    /// <returns>The number of builds since the last reset of the count.</returns>
+    procedure AnalysisBuildCount(): Integer
+    var
+        ArchiveRunContext: Codeunit "BGB Archive Run Context";
+    begin
+        exit(ArchiveRunContext.AnalysisBuildCount());
+    end;
+
+    /// <summary>
+    /// Sets the session analysis-build count back to zero.
+    /// </summary>
+    procedure ResetAnalysisBuildCount()
+    var
+        ArchiveRunContext: Codeunit "BGB Archive Run Context";
+    begin
+        ArchiveRunContext.ResetAnalysisBuildCount();
     end;
 
     /// <summary>
@@ -83,6 +118,7 @@ codeunit 50109 "BGB Project Archive Mgt."
 
     /// <summary>
     /// Stores every project in the active hierarchy run.
+    /// The run header is written first, so a rolled-back run is not reused, and the tree analysis is built once.
     /// </summary>
     procedure StoreActiveHierarchy()
     var
@@ -92,10 +128,46 @@ codeunit 50109 "BGB Project Archive Mgt."
         JobArchiveManagement: Codeunit "Job Archive Management";
         ProjectNo: Code[20];
     begin
+        EnsureRun();
+        CacheHierarchyAnalysis(ArchiveRunContext.TopProjectNo());
         foreach ProjectNo in ProjectHierarchyMgt.GetProjectAndDescendants(ArchiveRunContext.TopProjectNo()) do begin
             Job.Get(ProjectNo);
             JobArchiveManagement.StoreJob(Job, false);
         end;
+    end;
+
+    local procedure TryArchiveHierarchy(var Job: Record Job; var Failure: Text): Boolean
+    var
+        ArchiveRunContext: Codeunit "BGB Archive Run Context";
+        Started: Boolean;
+    begin
+        if Job."BGB Parent Project No." <> '' then
+            Error(NotTopLevelErr, Job."No.", Job."BGB Parent Project No.");
+        // Codeunit.Run rolls the hierarchy's writes back when it fails. SingleInstance state is not rolled back, so clear it on both paths.
+        ArchiveRunContext.Reset();
+        ArchiveRunContext.BeginRun(CreateGuid(), CurrentDateTime(), Job."No.", true);
+        ArchiveRunContext.SetInsideHierarchy(true);
+        Started := Codeunit.Run(Codeunit::"BGB Hierarchy Archive");
+        if not Started then begin
+            Failure := GetLastErrorText();
+            if Failure = '' then
+                Failure := CouldNotArchiveTok;
+        end else
+            Clear(Failure);
+        ArchiveRunContext.Reset();
+        exit(Started);
+    end;
+
+    local procedure AppendFailure(var Failed: TextBuilder; ProjectNo: Code[20]; Failure: Text)
+    begin
+        if Failed.Length() > 0 then
+            Failed.Append(' ');
+        Failed.Append(StrSubstNo(HierarchyFailedTok, ProjectNo, Failure));
+    end;
+
+    local procedure LogHierarchyFailure(ProjectNo: Code[20]; Failure: Text)
+    begin
+        Session.LogMessage('BGB0014', StrSubstNo(HierarchyFailedTok, ProjectNo, Failure), Verbosity::Error, DataClassification::CustomerContent, TelemetryScope::ExtensionPublisher, 'Category', HierarchyFailedTelemetryTok);
     end;
 
     /// <summary>
@@ -301,16 +373,11 @@ codeunit 50109 "BGB Project Archive Mgt."
     local procedure WriteProjectSnapshot(Job: Record Job; JobArchive: Record "Job Archive")
     var
         Snapshot: Record "BGB Project Snapshot";
-        JobFilter: Record Job;
         TempProjectAnalysisBuffer: Record "BGB Project Analysis Buffer" temporary;
-        ProjectAnalysisMgt: Codeunit "BGB Project Analysis Mgt.";
         ArchiveRunContext: Codeunit "BGB Archive Run Context";
         Exists: Boolean;
     begin
-        JobFilter.SetRange("No.", Job."No.");
-        ProjectAnalysisMgt.BuildAnalysis(JobFilter, TempProjectAnalysisBuffer, true);
-        TempProjectAnalysisBuffer.SetRange("Project No.", Job."No.");
-        if not TempProjectAnalysisBuffer.FindFirst() then
+        if not ResolveAnalysis(Job."No.", TempProjectAnalysisBuffer) then
             exit;
         Exists := Snapshot.Get(Job."No.", JobArchive."Version No.");
         if not Exists then
@@ -335,12 +402,14 @@ codeunit 50109 "BGB Project Archive Mgt."
     var
         JobTask: Record "Job Task";
         TaskSnapshot: Record "BGB Project Task Snapshot";
+        TempLedgerSnapshot: Record "BGB Project Task Snapshot" temporary;
         ArchiveRunContext: Codeunit "BGB Archive Run Context";
     begin
         TaskSnapshot.SetRange("Job No.", Job."No.");
         TaskSnapshot.SetRange("Version No.", JobArchive."Version No.");
         if not TaskSnapshot.IsEmpty() then
             TaskSnapshot.DeleteAll(false);
+        LoadLedgerAmounts(Job."No.", TempLedgerSnapshot);
         JobTask.SetRange("Job No.", Job."No.");
         if JobTask.FindSet() then
             repeat
@@ -352,9 +421,76 @@ codeunit 50109 "BGB Project Archive Mgt."
                 TaskSnapshot.Description := JobTask.Description;
                 TaskSnapshot."Job Task Type" := JobTask."Job Task Type";
                 TaskSnapshot.Indentation := JobTask.Indentation;
-                CalculateTaskAmounts(Job."No.", JobTask."Job Task No.", JobArchive."Version No.", true, TaskSnapshot);
+                if TempLedgerSnapshot.Get(Job."No.", 0, JobTask."Job Task No.") then
+                    CopyLedgerAmounts(TaskSnapshot, TempLedgerSnapshot);
+                AddPlanningArchiveAmounts(Job."No.", JobTask."Job Task No.", JobArchive."Version No.", TaskSnapshot);
                 TaskSnapshot.Insert(false);
             until JobTask.Next() = 0;
+    end;
+
+    local procedure ResolveAnalysis(ProjectNo: Code[20]; var TempProjectAnalysisBuffer: Record "BGB Project Analysis Buffer" temporary): Boolean
+    var
+        JobFilter: Record Job;
+        ArchiveRunContext: Codeunit "BGB Archive Run Context";
+        ProjectAnalysisMgt: Codeunit "BGB Project Analysis Mgt.";
+    begin
+        if ArchiveRunContext.CopyAnalysis(ProjectNo, TempProjectAnalysisBuffer) then
+            exit(true);
+        JobFilter.SetRange("No.", ProjectNo);
+        ProjectAnalysisMgt.BuildAnalysis(JobFilter, TempProjectAnalysisBuffer, true);
+        ArchiveRunContext.NoteAnalysisBuild();
+        TempProjectAnalysisBuffer.SetRange("Project No.", ProjectNo);
+        exit(TempProjectAnalysisBuffer.FindFirst());
+    end;
+
+    local procedure CacheHierarchyAnalysis(TopProjectNo: Code[20])
+    var
+        JobFilter: Record Job;
+        TempProjectAnalysisBuffer: Record "BGB Project Analysis Buffer" temporary;
+        ArchiveRunContext: Codeunit "BGB Archive Run Context";
+        ProjectAnalysisMgt: Codeunit "BGB Project Analysis Mgt.";
+    begin
+        if (TopProjectNo = '') or ArchiveRunContext.HasAnalysis() then
+            exit;
+        JobFilter.SetRange("No.", TopProjectNo);
+        ProjectAnalysisMgt.BuildAnalysis(JobFilter, TempProjectAnalysisBuffer, true);
+        ArchiveRunContext.StoreAnalysis(TempProjectAnalysisBuffer);
+        ArchiveRunContext.NoteAnalysisBuild();
+    end;
+
+    local procedure LoadLedgerAmounts(JobNo: Code[20]; var TempLedgerSnapshot: Record "BGB Project Task Snapshot" temporary)
+    var
+        JobLedgerEntry: Record "Job Ledger Entry";
+    begin
+        JobLedgerEntry.SetCurrentKey("Job No.", "Job Task No.", "Entry Type", "Posting Date");
+        JobLedgerEntry.SetRange("Job No.", JobNo);
+        JobLedgerEntry.SetLoadFields("Job Task No.", "Entry Type", Type, "Total Cost (LCY)", "Line Amount (LCY)");
+        if JobLedgerEntry.FindSet() then
+            repeat
+                if not TempLedgerSnapshot.Get(JobNo, 0, JobLedgerEntry."Job Task No.") then begin
+                    TempLedgerSnapshot.Init();
+                    TempLedgerSnapshot."Job No." := JobNo;
+                    TempLedgerSnapshot."Version No." := 0;
+                    TempLedgerSnapshot."Job Task No." := JobLedgerEntry."Job Task No.";
+                    TempLedgerSnapshot.Insert(false);
+                end;
+                ApplyLedgerEntry(JobLedgerEntry, TempLedgerSnapshot);
+                TempLedgerSnapshot.Modify(false);
+            until JobLedgerEntry.Next() = 0;
+    end;
+
+    local procedure CopyLedgerAmounts(var TaskSnapshot: Record "BGB Project Task Snapshot"; var TempLedgerSnapshot: Record "BGB Project Task Snapshot" temporary)
+    var
+        FromRef: RecordRef;
+        ToRef: RecordRef;
+    begin
+        ToRef.GetTable(TaskSnapshot);
+        FromRef.GetTable(TempLedgerSnapshot);
+        CopyFieldRange(ToRef, FromRef, 104, 107);
+        CopyFieldRange(ToRef, FromRef, 112, 115);
+        CopyFieldRange(ToRef, FromRef, 120, 123);
+        CopyFieldRange(ToRef, FromRef, 128, 131);
+        ToRef.SetTable(TaskSnapshot);
     end;
 
     local procedure CopyStatistics(var Snapshot: Record "BGB Project Snapshot"; var TempProjectAnalysisBuffer: Record "BGB Project Analysis Buffer" temporary)
@@ -380,41 +516,43 @@ codeunit 50109 "BGB Project Archive Mgt."
 
     local procedure AddLedgerAmounts(JobNo: Code[20]; JobTaskNo: Code[20]; var TaskSnapshot: Record "BGB Project Task Snapshot")
     var
-        EntryType: Enum "Job Journal Line Entry Type";
-        LineType: Enum "Job Journal Line Type";
-    begin
-        AddLedgerType(JobNo, JobTaskNo, EntryType::Usage, LineType::Resource, 104, 120, 1, TaskSnapshot);
-        AddLedgerType(JobNo, JobTaskNo, EntryType::Usage, LineType::Item, 104, 120, 1, TaskSnapshot);
-        AddLedgerType(JobNo, JobTaskNo, EntryType::Usage, LineType::"G/L Account", 104, 120, 1, TaskSnapshot);
-        AddLedgerType(JobNo, JobTaskNo, EntryType::Sale, LineType::Resource, 112, 128, -1, TaskSnapshot);
-        AddLedgerType(JobNo, JobTaskNo, EntryType::Sale, LineType::Item, 112, 128, -1, TaskSnapshot);
-        AddLedgerType(JobNo, JobTaskNo, EntryType::Sale, LineType::"G/L Account", 112, 128, -1, TaskSnapshot);
-    end;
-
-    local procedure AddLedgerType(JobNo: Code[20]; JobTaskNo: Code[20]; EntryType: Enum "Job Journal Line Entry Type"; LineType: Enum "Job Journal Line Type"; CostBase: Integer; PriceBase: Integer; Sign: Decimal; var TaskSnapshot: Record "BGB Project Task Snapshot")
-    var
         JobLedgerEntry: Record "Job Ledger Entry";
-        Cost: Decimal;
-        Price: Decimal;
     begin
+        // Key2 contains project, task and entry type. Type is not in that key, so one pass splits the six amounts.
+        JobLedgerEntry.SetCurrentKey("Job No.", "Job Task No.", "Entry Type", "Posting Date");
         JobLedgerEntry.SetRange("Job No.", JobNo);
         JobLedgerEntry.SetRange("Job Task No.", JobTaskNo);
-        JobLedgerEntry.SetRange("Entry Type", EntryType);
-        JobLedgerEntry.SetRange(Type, LineType);
-        SumLedger(JobLedgerEntry, Cost, Price);
-        AddSplit(TaskSnapshot, CostBase, LineType.AsInteger(), Sign * Cost);
-        AddSplit(TaskSnapshot, PriceBase, LineType.AsInteger(), Sign * Price);
-    end;
-
-    local procedure SumLedger(var JobLedgerEntry: Record "Job Ledger Entry"; var Cost: Decimal; var Price: Decimal)
-    begin
-        Cost := 0;
-        Price := 0;
+        JobLedgerEntry.SetLoadFields("Entry Type", Type, "Total Cost (LCY)", "Line Amount (LCY)");
         if JobLedgerEntry.FindSet() then
             repeat
-                Cost += JobLedgerEntry."Total Cost (LCY)";
-                Price += JobLedgerEntry."Line Amount (LCY)";
+                ApplyLedgerEntry(JobLedgerEntry, TaskSnapshot);
             until JobLedgerEntry.Next() = 0;
+    end;
+
+    local procedure ApplyLedgerEntry(JobLedgerEntry: Record "Job Ledger Entry"; var TaskSnapshot: Record "BGB Project Task Snapshot")
+    var
+        CostBase: Integer;
+        PriceBase: Integer;
+        Sign: Decimal;
+    begin
+        case JobLedgerEntry."Entry Type" of
+            JobLedgerEntry."Entry Type"::Usage:
+                begin
+                    Sign := 1;
+                    CostBase := 104;
+                    PriceBase := 120;
+                end;
+            JobLedgerEntry."Entry Type"::Sale:
+                begin
+                    Sign := -1;
+                    CostBase := 112;
+                    PriceBase := 128;
+                end;
+            else
+                exit;
+        end;
+        AddSplit(TaskSnapshot, CostBase, JobLedgerEntry.Type.AsInteger(), Sign * JobLedgerEntry."Total Cost (LCY)");
+        AddSplit(TaskSnapshot, PriceBase, JobLedgerEntry.Type.AsInteger(), Sign * JobLedgerEntry."Line Amount (LCY)");
     end;
 
     local procedure AddPlanningArchiveAmounts(JobNo: Code[20]; JobTaskNo: Code[20]; VersionNo: Integer; var TaskSnapshot: Record "BGB Project Task Snapshot")

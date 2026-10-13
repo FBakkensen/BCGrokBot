@@ -133,6 +133,7 @@ codeunit 50163 "BGB Version Compare Int Tests"
         ProjectTestData.CreateProject(Job, Grand2No, 'Grand 2', Child2No, CustomerNo, '', '');
         ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 100);
         // [WHEN] the hierarchy is archived
+        ProjectArchiveMgt.ResetAnalysisBuildCount();
         ProjectArchiveMgt.ArchiveHierarchy(TopJob);
         // [THEN] five snapshots share one hierarchy run, and a child keeps its parent
         Snapshot.SetRange("Job No.", TopNo);
@@ -152,6 +153,10 @@ codeunit 50163 "BGB Version Compare Int Tests"
         Snapshot.FindFirst();
         Assert.AreEqual(Child2No, Snapshot."Parent Project No.", 'parent');
         Assert.AreEqual(2, Snapshot.Level, 'level');
+        Assert.AreEqual(1, ProjectArchiveMgt.AnalysisBuildCount(), 'tree analysis once');
+        Snapshot.SetRange("Job No.", TopNo);
+        Snapshot.FindFirst();
+        Assert.AreEqual(SumBillablePrice(RunId), Snapshot."Hier. Billable Price", 'hierarchy billable from the one analysis');
     end;
 
     [Test]
@@ -277,11 +282,134 @@ codeunit 50163 "BGB Version Compare Int Tests"
     end;
 
     [Test]
+    procedure FailedHierarchyArchiveThenNormalArchiveHasItsOwnRun()
+    var
+        TopJob: Record Job;
+        ChildJob: Record Job;
+        Snapshot: Record "BGB Project Snapshot";
+        ArchiveRun: Record "BGB Project Archive Run";
+        ArchiveFailure: Codeunit "BGB Archive Failure";
+        CustomerNo: Code[20];
+        Prefix: Code[12];
+        TopNo: Code[20];
+        ChildNo: Code[20];
+        ErrorText: Text;
+    begin
+        // [SCENARIO] A failed Archive Hierarchy does not attach a later normal archive to the rolled-back run
+        Prefix := CopyStr(DelChr(Format(CreateGuid()), '=', '{}-'), 1, 12);
+        CustomerNo := ProjectTestData.UpsertCustomer(CopyStr(Prefix + 'C', 1, 20), 'Failed hierarchy customer');
+        TopNo := CopyStr(Prefix + 'T', 1, 20);
+        ChildNo := CopyStr(Prefix + '1', 1, 20);
+        ProjectTestData.CreateProject(TopJob, TopNo, 'Failed top', '', CustomerNo, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(TopJob, '100', 1, 10);
+        ProjectTestData.CreateProject(ChildJob, ChildNo, 'Failed child', TopNo, CustomerNo, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(ChildJob, '100', 1, 10);
+        ArchiveFailure.FailNextStore(ChildNo);
+        BindSubscription(ArchiveFailure);
+        // [WHEN] the hierarchy archive fails on the child, and the top project is then archived on its own
+        asserterror ProjectArchiveMgt.ArchiveHierarchy(TopJob);
+        ErrorText := GetLastErrorText();
+        UnbindSubscription(ArchiveFailure);
+        Assert.IsTrue(StrPos(ErrorText, ChildNo) > 0, ErrorText);
+        StoreProject(TopJob);
+        // [THEN] the top project has its own non-hierarchy run, and the child was not archived
+        Snapshot.SetRange("Job No.", TopNo);
+        Assert.AreEqual(1, Snapshot.Count(), 'one snapshot');
+        Snapshot.FindFirst();
+        ArchiveRun.Get(Snapshot."Run ID");
+        Assert.IsFalse(ArchiveRun.Hierarchy, 'normal archive run');
+        Assert.AreEqual(TopNo, ArchiveRun."Top Project No.", 'run project');
+        Snapshot.SetRange("Run ID", Snapshot."Run ID");
+        Assert.AreEqual(1, Snapshot.Count(), 'only the top project');
+        Snapshot.SetRange("Run ID");
+        Snapshot.SetRange("Job No.", ChildNo);
+        Assert.IsTrue(Snapshot.IsEmpty(), 'child rolled back');
+    end;
+
+    [Test]
+    procedure FailedRenameDoesNotMoveSnapshotsWhenTheArchiveIsDeleted()
+    var
+        Job: Record Job;
+        JobArchive: Record "Job Archive";
+        Snapshot: Record "BGB Project Snapshot";
+        ArchiveFailure: Codeunit "BGB Archive Failure";
+        CustomerNo: Code[20];
+        ProjectNo: Code[20];
+        NewProjectNo: Code[20];
+        ErrorText: Text;
+    begin
+        // [SCENARIO] A failed rename does not make a later archive delete move the snapshots
+        CustomerNo := ProjectTestData.UpsertCustomer(CopyStr(NewNo() + 'C', 1, 20), 'Failed rename customer');
+        ProjectNo := CopyStr(NewNo(), 1, 20);
+        NewProjectNo := CopyStr(NewNo(), 1, 20);
+        ProjectTestData.CreateProject(Job, ProjectNo, 'Fail rename', '', CustomerNo, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 10);
+        StoreProject(Job);
+        ArchiveFailure.FailNextRename(ProjectNo);
+        BindSubscription(ArchiveFailure);
+        // [WHEN] the rename fails after the rename flag is set, and the archive is then deleted
+        asserterror Job.Rename(NewProjectNo);
+        ErrorText := GetLastErrorText();
+        UnbindSubscription(ArchiveFailure);
+        Assert.IsTrue(StrPos(ErrorText, ProjectNo) > 0, ErrorText);
+        Job.Get(ProjectNo);
+        JobArchive.SetRange("No.", ProjectNo);
+        JobArchive.FindFirst();
+        JobArchive.Delete(true);
+        // [THEN] the snapshot is deleted with the archive and was not moved to the failed target
+        Snapshot.SetRange("Job No.", ProjectNo);
+        Assert.IsTrue(Snapshot.IsEmpty(), 'snapshot deleted');
+        Snapshot.SetRange("Job No.", NewProjectNo);
+        Assert.IsTrue(Snapshot.IsEmpty(), 'not moved');
+        JobArchive.SetRange("No.", NewProjectNo);
+        Assert.IsTrue(JobArchive.IsEmpty(), 'archive not renamed');
+    end;
+
+    [Test]
+    procedure FailedDeleteDoesNotMarkTheNextArchive()
+    var
+        Job: Record Job;
+        JobsSetup: Record "Jobs Setup";
+        Snapshot: Record "BGB Project Snapshot";
+        PreviousOption: Enum "Job Archive Option";
+        CustomerNo: Code[20];
+        ProjectNo: Code[20];
+    begin
+        // [SCENARIO] A delete that fails because ledger entries exist does not mark a later archive as during project delete
+        JobsSetup.Get();
+        PreviousOption := JobsSetup."Archive Jobs";
+        CustomerNo := ProjectTestData.UpsertCustomer(CopyStr(NewNo() + 'C', 1, 20), 'Failed delete customer');
+        ProjectNo := CopyStr(NewNo(), 1, 20);
+        ProjectTestData.CreateProject(Job, ProjectNo, 'Fail delete', '', CustomerNo, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 10);
+        InsertLedger(ProjectNo, '100', "Job Journal Line Entry Type"::Usage, "Job Journal Line Type"::Resource, 5, 8);
+        Job.SetHideValidationDialog(true);
+        // [WHEN] the delete fails, and a status change then archives the project
+        asserterror Job.Delete(true);
+        Job.Get(ProjectNo);
+        JobsSetup.Get();
+        JobsSetup."Archive Jobs" := JobsSetup."Archive Jobs"::Always;
+        JobsSetup.Modify(false);
+        Job.SetHideValidationDialog(true);
+        Job.Validate(Status, Job.Status::Planning);
+        Job.Modify(true);
+        // [THEN] the snapshot exists and is not marked as taken during project delete
+        Snapshot.SetRange("Job No.", ProjectNo);
+        Assert.IsTrue(Snapshot.FindFirst(), 'snapshot');
+        Assert.IsFalse(Snapshot."During Project Delete", 'not during delete');
+        JobsSetup.Get();
+        JobsSetup."Archive Jobs" := PreviousOption;
+        JobsSetup.Modify(false);
+    end;
+
+    [Test]
     procedure JobQueueArchivesEachOpenTopLevelHierarchy()
     var
         Job: Record Job;
+        JobsSetup: Record "Jobs Setup";
         Snapshot: Record "BGB Project Snapshot";
         JobQueueEntry: Record "Job Queue Entry";
+        PreviousOption: Enum "Job Archive Option";
         CustomerNo: Code[20];
         Prefix: Code[8];
         Top1: Code[20];
@@ -292,6 +420,8 @@ codeunit 50163 "BGB Version Compare Int Tests"
         EntriesBefore: Integer;
     begin
         // [SCENARIO] The job queue codeunit archives each open top-level hierarchy in the filter as one run and does not create a schedule
+        JobsSetup.Get();
+        PreviousOption := JobsSetup."Archive Jobs";
         SetArchiveOption("Job Archive Option"::Never);
         Prefix := CopyStr(DelChr(Format(CreateGuid()), '=', '{}-'), 1, 8);
         CustomerNo := ProjectTestData.UpsertCustomer(CopyStr(Prefix + 'C', 1, 20), 'Job queue customer');
@@ -327,6 +457,51 @@ codeunit 50163 "BGB Version Compare Int Tests"
         Assert.IsTrue(Snapshot.IsEmpty(), 'completed project');
         Snapshot.SetRange("Job No.", OutsideNo);
         Assert.IsTrue(Snapshot.IsEmpty(), 'outside the filter');
+        SetArchiveOption(PreviousOption);
+        // The job queue commits each hierarchy, which also commits the Jobs Setup change above.
+        Commit();
+    end;
+
+    [Test]
+    procedure JobQueueKeepsEarlierHierarchyWhenALaterOneFails()
+    var
+        Job: Record Job;
+        Snapshot: Record "BGB Project Snapshot";
+        JobQueueEntry: Record "Job Queue Entry";
+        ArchiveFailure: Codeunit "BGB Archive Failure";
+        CustomerNo: Code[20];
+        Prefix: Code[8];
+        Top1: Code[20];
+        Top2: Code[20];
+        FailureText: Text;
+        RanOk: Boolean;
+        EntriesBefore: Integer;
+    begin
+        // [SCENARIO] The job queue commits each hierarchy, logs a failure, and still fails the entry
+        Prefix := CopyStr(DelChr(Format(CreateGuid()), '=', '{}-'), 1, 8);
+        CustomerNo := ProjectTestData.UpsertCustomer(CopyStr(Prefix + 'C', 1, 20), 'Queue failure customer');
+        Top1 := CopyStr(Prefix + 'A', 1, 20);
+        Top2 := CopyStr(Prefix + 'B', 1, 20);
+        ProjectTestData.CreateProject(Job, Top1, 'Queue kept', '', CustomerNo, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 10);
+        ProjectTestData.CreateProject(Job, Top2, 'Queue failed', '', CustomerNo, '', '');
+        ProjectTestData.CreateTaskWithBillableLine(Job, '100', 1, 10);
+        ArchiveFailure.FailNextStore(Top2);
+        BindSubscription(ArchiveFailure);
+        JobQueueEntry.Init();
+        JobQueueEntry."Parameter String" := Prefix + '*';
+        EntriesBefore := JobQueueEntry.Count();
+        // [WHEN] the second hierarchy fails
+        RanOk := Codeunit.Run(Codeunit::"BGB Archive Hierarchies JQ", JobQueueEntry);
+        FailureText := GetLastErrorText();
+        UnbindSubscription(ArchiveFailure);
+        // [THEN] the first hierarchy stays archived, the second does not, and the error names the failed project
+        Assert.IsFalse(RanOk, 'job queue entry fails');
+        Assert.IsTrue(StrPos(FailureText, Top2) > 0, FailureText);
+        Assert.AreEqual(EntriesBefore, JobQueueEntry.Count(), 'job queue entries');
+        Assert.AreEqual(1, CountRuns(Top1), 'first hierarchy committed');
+        Snapshot.SetRange("Job No.", Top2);
+        Assert.IsTrue(Snapshot.IsEmpty(), 'second hierarchy rolled back');
     end;
 
     local procedure SetArchiveOption(ArchiveOption: Enum "Job Archive Option")
@@ -381,6 +556,19 @@ codeunit 50163 "BGB Version Compare Int Tests"
     begin
         Snapshot.SetRange("Job No.", ProjectNo);
         exit(Snapshot.Count());
+    end;
+
+    local procedure SumBillablePrice(RunId: Guid): Decimal
+    var
+        Snapshot: Record "BGB Project Snapshot";
+        Total: Decimal;
+    begin
+        Snapshot.SetRange("Run ID", RunId);
+        if Snapshot.FindSet() then
+            repeat
+                Total += Snapshot."Billable Price Total";
+            until Snapshot.Next() = 0;
+        exit(Total);
     end;
 
     local procedure StoreProject(var Job: Record Job)
